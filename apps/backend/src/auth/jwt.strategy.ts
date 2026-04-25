@@ -12,13 +12,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
       secretOrKey: configService.get('JWT_SECRET'),
     });
   }
 
-  async validate(payload: { sub: string; email: string; role: string }) {
-    const user = await this.usersService.findById(payload.sub);
-    if (!user) throw new UnauthorizedException();
-    return user;
+  async validate(payload: any) {
+    try {
+      // Fetch user from DB to ensure they still exist and get full user object
+      const user = await this.usersService.findById(payload.sub);
+      return user; // Return full User entity with all properties
+    } catch (error) {
+      throw new UnauthorizedException(
+        'Token is invalid or user no longer exists',
+      );
+    }
   }
 }

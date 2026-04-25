@@ -4,6 +4,7 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
+import { AuthResponseDto } from 'src/common/dto/auth-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
     const user = await this.usersService.create(registerDto);
     const token = this.jwtService.sign({
       sub: user.id,
@@ -24,13 +25,15 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        fullName: `${user.firstName} ${user.lastName}`,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
+        createdAt: user.createdAt,
       },
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -47,8 +50,10 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        fullName: `${user.firstName} ${user.lastName}`,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
+        createdAt: user.createdAt,
       },
     };
   }

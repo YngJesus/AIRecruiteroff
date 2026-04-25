@@ -12,12 +12,34 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - airecruiter-net
 
   redis:
     image: redis:7-alpine
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - airecruiter-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      SCRIPT_ROOT: /pgadmin4
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - airecruiter-net
 
   backend:
     build:
@@ -34,6 +56,8 @@ services:
     volumes:
       - ./apps/backend:/app
       - /app/node_modules
+    networks:
+      - airecruiter-net
 
   frontend:
     build:
@@ -47,6 +71,13 @@ services:
     volumes:
       - ./apps/frontend:/app
       - /app/node_modules
+    networks:
+      - airecruiter-net
 
 volumes:
   pgdata:
+  pgadmin_data:
+
+networks:
+  airecruiter-net:
+    driver: bridge
