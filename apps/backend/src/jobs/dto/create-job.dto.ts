@@ -1,4 +1,10 @@
-import { IsString, IsArray, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsEnum,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SkillDto {
@@ -25,6 +31,7 @@ export class CreateJobDto {
   description?: string;
 
   @IsArray()
+  @ValidateNested()
   @Type(() => SkillDto)
   requiredSkills: SkillDto[];
 }
