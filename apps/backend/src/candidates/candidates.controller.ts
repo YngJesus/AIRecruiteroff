@@ -20,6 +20,8 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { CandidatesService } from './candidates.service';
 import { CreateCandidateDto } from './dto/create-candidate.dto';
@@ -109,6 +111,19 @@ export class CandidatesController {
 
   @Post('upload/:candidateId')
   @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'PDF or image file',
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: 'Upload CV file and parse' })
   @ApiResponse({ status: 201, description: 'CV uploaded and parsed' })
   @ApiResponse({ status: 400, description: 'Invalid file' })
