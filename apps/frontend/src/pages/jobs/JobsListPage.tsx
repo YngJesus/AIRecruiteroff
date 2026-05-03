@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jobsApi } from "../../api/jobs";
 import type { Job } from "../../api/jobs";

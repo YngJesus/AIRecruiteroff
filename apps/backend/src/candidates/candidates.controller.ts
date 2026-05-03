@@ -9,8 +9,12 @@ import {
   UseGuards,
   HttpCode,
   Query,
+  UseInterceptors,
   BadRequestException,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 import {
   ApiTags,
   ApiOperation,
@@ -25,14 +29,19 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { UpdateCandidateStatusDto } from './dto/update-candidate-status.dto';
+import { UploadService } from 'src/upload/upload.service';
+import { ParserService } from './parser.service';
 
 @ApiBearerAuth()
 @ApiTags('Candidates')
 @UseGuards(JwtAuthGuard)
 @Controller('candidates')
 export class CandidatesController {
-  constructor(private readonly candidatesService: CandidatesService) {}
-
+  constructor(
+    private readonly candidatesService: CandidatesService,
+    private readonly uploadService: UploadService,
+    private readonly parserService: ParserService,
+  ) {}
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Create a new candidate' })
@@ -96,5 +105,41 @@ export class CandidatesController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   remove(@Param('id') id: string) {
     return this.candidatesService.remove(id);
+  }
+
+  @Post('upload/:candidateId')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload CV file and parse' })
+  @ApiResponse({ status: 201, description: 'CV uploaded and parsed' })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  async uploadCV(
+    @Param('candidateId') candidateId: string,
+    @UploadedFile() file: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Save file
+    const filepath = await this.uploadService.handleFileUpload(file);
+
+    // Extract text based on file type
+    let rawText = '';
+    if (file.mimetype === 'application/pdf') {
+      rawText = await this.uploadService.extractTextFromPDF(filepath);
+    } else {
+      rawText = await this.uploadService.extractTextFromImage(filepath);
+    }
+
+    // Parse CV
+    const parsedData = this.parserService.parseCV(rawText);
+
+    // Update candidate
+    const updated = await this.candidatesService.updateParsedData(
+      candidateId,
+      parsedData,
+    );
+
+    return updated;
   }
 }
