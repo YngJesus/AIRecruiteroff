@@ -22,7 +22,14 @@ export class CvExtractionService {
       );
 
       return {
-        skills: Array.isArray(data.skills) ? data.skills : [],
+        skills: Array.isArray(data.skills)
+          ? data.skills
+              .map((skill: any) => ({
+                name: String(skill?.name ?? skill?.skill ?? skill ?? '').trim(),
+                level: skill?.level,
+              }))
+              .filter((skill) => skill.name.length > 0)
+          : [],
         experience: Array.isArray(data.experience) ? data.experience : [],
         education: Array.isArray(data.education) ? data.education : [],
         certifications: Array.isArray(data.certifications)

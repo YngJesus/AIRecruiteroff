@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* App shell: full-height dark background behind routed pages */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  @apply bg-gray-900 text-gray-100 antialiased;
+}

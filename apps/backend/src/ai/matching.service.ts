@@ -7,12 +7,24 @@ import { ParsedCV, SkillGap } from './types';
 export class MatchingService {
   constructor(private readonly groq: GroqService) {}
 
+  private normalizeSkillName(skill: unknown): string {
+    return String(skill ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[\s._-]+/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  }
+
   async computeMatch(
     job: Job,
     parsed: ParsedCV,
   ): Promise<{ matchScore: number; skillGaps: SkillGap[] }> {
-    const parsedSkills = (parsed.skills || []).map((s) => s.name.toLowerCase());
-    const required = job.requiredSkills || [];
+    const parsedSkills = (parsed.skills || [])
+      .map((s: any) => this.normalizeSkillName(s?.name ?? s?.skill ?? s))
+      .filter(Boolean);
+    const required = Array.isArray(job?.requiredSkills)
+      ? job.requiredSkills
+      : [];
 
     if (!required.length) {
       return { matchScore: 0, skillGaps: [] };
@@ -23,8 +35,12 @@ export class MatchingService {
     let totalWeight = 0;
 
     for (const req of required) {
-      const reqSkill = req.skill.toLowerCase();
-      const baseWeight = req.priority === 'required' ? 2 : 1;
+      const reqSkill = this.normalizeSkillName(req?.skill);
+      if (!reqSkill) {
+        continue;
+      }
+
+      const baseWeight = req?.priority === 'required' ? 2 : 1;
       totalWeight += baseWeight;
 
       if (parsedSkills.some((s) => s === reqSkill || s.includes(reqSkill))) {
@@ -33,7 +49,10 @@ export class MatchingService {
         continue;
       }
 
-      const partial = await this.isSemanticPartialMatch(req.skill, parsedSkills);
+      const partial = await this.isSemanticPartialMatch(
+        req.skill,
+        parsedSkills,
+      );
       if (partial) {
         score += baseWeight * 0.5;
         skillGaps.push({ skill: req.skill, status: 'partial' });

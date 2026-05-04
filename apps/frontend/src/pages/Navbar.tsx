@@ -31,7 +31,8 @@ export function Navbar() {
             >
               Dashboard
             </button>
-            {currentUser?.role === "recruiter" && (
+            {(currentUser?.role === "recruiter" ||
+              currentUser?.role === "admin") && (
               <button
                 onClick={() => navigate("/jobs")}
                 className={`${isActive("/jobs")} hover:text-blue-400`}

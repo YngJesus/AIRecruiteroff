@@ -38,7 +38,7 @@ export function App() {
                 <Route
                   path="/jobs"
                   element={
-                    <ProtectedRoute requiredRole="recruiter">
+                    <ProtectedRoute requiredRole={["recruiter", "admin"]}>
                       <JobsListPage />
                     </ProtectedRoute>
                   }
@@ -46,13 +46,13 @@ export function App() {
                 <Route
                   path="/jobs/new"
                   element={
-                    <ProtectedRoute requiredRole="recruiter">
+                    <ProtectedRoute requiredRole={["recruiter", "admin"]}>
                       <JobCreatePage />
                     </ProtectedRoute>
                   }
                 />
                 <Route
-                  path="/candidates/:jobId"
+                  path="/jobs/:jobId/candidates"
                   element={<CandidatesListPage />}
                 />
                 <Route

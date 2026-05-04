@@ -64,7 +64,9 @@ export function CandidatesListPage() {
       candidate.cvFileName.toLowerCase().includes(search.toLowerCase()),
     )
     .sort((a, b) =>
-      sortOrder === "desc" ? b.matchScore - a.matchScore : a.matchScore - b.matchScore,
+      sortOrder === "desc"
+        ? b.matchScore - a.matchScore
+        : a.matchScore - b.matchScore,
     );
 
   return (
@@ -177,7 +179,9 @@ export function CandidatesListPage() {
       {showUploadModal && jobId && (
         <CVUploadModal
           jobId={jobId}
-          onSuccess={(payload) => navigate(`/candidates/${payload.candidateId}`)}
+          onSuccess={(payload) =>
+            navigate(`/candidates/${payload.candidateId}`)
+          }
           onClose={() => {
             setShowUploadModal(false);
             fetchData();

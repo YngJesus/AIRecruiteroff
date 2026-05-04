@@ -89,7 +89,9 @@ export function CandidateDetailPage() {
             {candidate.status}
           </p>
           {candidate.processingError && (
-            <p className="text-red-400 text-xs mt-2">{candidate.processingError}</p>
+            <p className="text-red-400 text-xs mt-2">
+              {candidate.processingError}
+            </p>
           )}
         </div>
 
@@ -108,7 +110,8 @@ export function CandidateDetailPage() {
 
       {["uploaded", "processing"].includes(candidate.status) && (
         <div className="mb-6 p-4 bg-blue-900/40 border border-blue-700 rounded text-blue-200">
-          Candidate analysis is in progress. This page refreshes automatically every 3 seconds.
+          Candidate analysis is in progress. This page refreshes automatically
+          every 3 seconds.
         </div>
       )}
 
@@ -128,8 +131,9 @@ export function CandidateDetailPage() {
                     key={idx}
                     className="bg-blue-900 text-blue-200 px-3 py-1 rounded"
                   >
-                    {skill.name}
-                    {skill.level && ` (${skill.level})`}
+                    {skill.name ?? skill.skill ?? "Unknown skill"}
+                    {(skill.level ?? skill.proficiency) &&
+                      ` (${skill.level ?? skill.proficiency})`}
                   </span>
                 ))}
               </div>
@@ -189,27 +193,32 @@ export function CandidateDetailPage() {
         </div>
       )}
 
-      {candidate.generatedQuestions && candidate.generatedQuestions.length > 0 && (
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Interview Questions</h2>
-          <div className="space-y-4">
-            {candidate.generatedQuestions.map((q: any, idx: number) => (
-              <div key={idx} className="border border-gray-700 rounded p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-blue-300 font-semibold">{q.skill}</span>
-                  <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-200">
-                    {q.difficulty}
-                  </span>
-                  <span className="text-xs px-2 py-1 rounded bg-purple-900 text-purple-200">
-                    {q.type}
-                  </span>
+      {candidate.generatedQuestions &&
+        candidate.generatedQuestions.length > 0 && (
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Interview Questions
+            </h2>
+            <div className="space-y-4">
+              {candidate.generatedQuestions.map((q: any, idx: number) => (
+                <div key={idx} className="border border-gray-700 rounded p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-300 font-semibold">
+                      {q.skill}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-200">
+                      {q.difficulty}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded bg-purple-900 text-purple-200">
+                      {q.type}
+                    </span>
+                  </div>
+                  <p className="text-gray-200">{q.question}</p>
                 </div>
-                <p className="text-gray-200">{q.question}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

@@ -84,7 +84,7 @@ export class JobsController {
     @Body() updateJobDto: UpdateJobDto,
     @CurrentUser() user: any,
   ) {
-    return this.jobsService.update(id, updateJobDto, user.id);
+    return this.jobsService.update(id, updateJobDto, user);
   }
 
   @Delete(':id')
@@ -100,6 +100,6 @@ export class JobsController {
     description: 'Forbidden - only creator can delete',
   })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.jobsService.remove(id, user.id);
+    return this.jobsService.remove(id, user);
   }
 }

@@ -6,6 +6,8 @@ import {
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Job } from './entities/job.entity';
+import { Candidate } from 'src/candidates/entities/candidate.entity';
+import { UserRole } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -14,6 +16,8 @@ export class JobsService {
   constructor(
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
+    @InjectRepository(Candidate)
+    private candidatesRepository: Repository<Candidate>,
   ) {}
 
   async create(userId: string, createJobDto: CreateJobDto): Promise<Job> {
@@ -49,12 +53,11 @@ export class JobsService {
   async update(
     id: string,
     updateJobDto: UpdateJobDto,
-    userId: string,
+    user: { id: string; role: UserRole },
   ): Promise<Job> {
     const job = await this.findOne(id);
 
-    // Check if user is creator or admin
-    if (job.createdById !== userId) {
+    if (job.createdById !== user.id && user.role !== UserRole.ADMIN) {
       throw new BadRequestException(
         'Only creator or admin can update this job',
       );
@@ -64,15 +67,19 @@ export class JobsService {
     return this.jobsRepository.save(job);
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(
+    id: string,
+    user: { id: string; role: UserRole },
+  ): Promise<void> {
     const job = await this.findOne(id);
 
-    if (job.createdById !== userId) {
+    if (job.createdById !== user.id && user.role !== UserRole.ADMIN) {
       throw new BadRequestException(
         'Only creator or admin can delete this job',
       );
     }
 
+    await this.candidatesRepository.delete({ jobId: id });
     await this.jobsRepository.remove(job);
   }
 }

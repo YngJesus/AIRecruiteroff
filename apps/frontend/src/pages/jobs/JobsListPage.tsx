@@ -82,7 +82,7 @@ export function JobsListPage() {
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => navigate(`/candidates/${job.id}`)}
+                    onClick={() => navigate(`/jobs/${job.id}/candidates`)}
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
                   >
                     Candidates
