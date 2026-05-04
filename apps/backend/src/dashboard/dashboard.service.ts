@@ -78,11 +78,54 @@ export class DashboardService {
       {},
     );
 
+    const highMatchCandidates = candidates.filter(
+      (c) => Number((c as any).matchScore || 0) >= 70,
+    ).length;
+    const pipelineInProgress = candidates.filter((c) =>
+      ['uploaded', 'processing'].includes(String(c.status)),
+    ).length;
+    const needsAttention = candidates.filter((c) =>
+      ['failed', 'rejected'].includes(String(c.status)),
+    ).length;
+    const interviewReady = candidates.filter(
+      (c) => String(c.status) === 'awaiting-interview',
+    ).length;
+
+    const recentJobEntities = await this.jobsRepository.find({
+      where: isAdmin ? undefined : { createdById: user.id },
+      order: { updatedAt: 'DESC' },
+      take: 5,
+      select: { id: true, title: true } as any,
+    });
+    const rjIds = recentJobEntities.map((j) => j.id);
+    let recentJobs: { id: string; title: string; candidateCount: number }[] =
+      [];
+    if (rjIds.length) {
+      const raw = await this.candidatesRepository
+        .createQueryBuilder('c')
+        .select('c.jobId', 'jobId')
+        .addSelect('COUNT(c.id)', 'cnt')
+        .where('c.jobId IN (:...rjIds)', { rjIds })
+        .groupBy('c.jobId')
+        .getRawMany<{ jobId: string; cnt: string }>();
+      const cntMap = new Map(raw.map((r) => [r.jobId, Number(r.cnt)]));
+      recentJobs = recentJobEntities.map((j) => ({
+        id: j.id,
+        title: j.title,
+        candidateCount: cntMap.get(j.id) ?? 0,
+      }));
+    }
+
     return {
       totalJobs,
       totalCandidates,
       avgMatchScore,
+      highMatchCandidates,
+      pipelineInProgress,
+      needsAttention,
+      interviewReady,
       candidatesByStatus,
+      recentJobs,
       recentCandidates: recentCandidates.map((candidate) => ({
         id: candidate.id,
         jobId: (candidate as any).jobId,

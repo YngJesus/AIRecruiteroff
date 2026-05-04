@@ -3,6 +3,12 @@ import { Job } from 'src/jobs/entities/job.entity';
 import { GroqService } from './groq.service';
 import { ParsedCV, SkillGap } from './types';
 
+const LEVEL_SCORE: Record<string, number> = {
+  junior: 1,
+  mid: 2,
+  senior: 3,
+};
+
 @Injectable()
 export class MatchingService {
   constructor(private readonly groq: GroqService) {}
@@ -13,6 +19,50 @@ export class MatchingService {
       .trim()
       .replace(/[\s._-]+/g, '')
       .replace(/[^a-z0-9]/g, '');
+  }
+
+  /** Map free-text level to junior | mid | senior for scoring. */
+  private normalizeLevel(level: unknown): keyof typeof LEVEL_SCORE {
+    const v = String(level ?? '')
+      .toLowerCase()
+      .trim();
+    if (
+      v.includes('junior') ||
+      v === 'jr' ||
+      v.includes('beginner') ||
+      v.includes('entry')
+    ) {
+      return 'junior';
+    }
+    if (
+      v.includes('senior') ||
+      v === 'sr' ||
+      v.includes('lead') ||
+      v.includes('principal') ||
+      v.includes('staff')
+    ) {
+      return 'senior';
+    }
+    if (v.includes('mid') || v.includes('intermediate') || v.includes('med')) {
+      return 'mid';
+    }
+    return 'mid';
+  }
+
+  private findMatchingCandidateSkill(
+    parsed: ParsedCV,
+    reqSkill: string,
+  ): { name?: string; level?: string } | undefined {
+    for (const s of parsed.skills || []) {
+      const n = this.normalizeSkillName(
+        (s as any)?.name ?? (s as any)?.skill ?? s,
+      );
+      if (!n) continue;
+      if (n === reqSkill || n.includes(reqSkill) || reqSkill.includes(n)) {
+        return s as { name?: string; level?: string };
+      }
+    }
+    return undefined;
   }
 
   async computeMatch(
@@ -43,9 +93,27 @@ export class MatchingService {
       const baseWeight = req?.priority === 'required' ? 2 : 1;
       totalWeight += baseWeight;
 
-      if (parsedSkills.some((s) => s === reqSkill || s.includes(reqSkill))) {
-        score += baseWeight;
-        skillGaps.push({ skill: req.skill, status: 'match' });
+      const candidateSkillObj = this.findMatchingCandidateSkill(
+        parsed,
+        reqSkill,
+      );
+
+      if (candidateSkillObj) {
+        const reqLevelKey = this.normalizeLevel((req as any)?.level);
+        const requiredLevel = LEVEL_SCORE[reqLevelKey] ?? 2;
+        const candLevelKey = this.normalizeLevel(candidateSkillObj?.level);
+        const candidateLevel = LEVEL_SCORE[candLevelKey] ?? 2;
+
+        if (candidateLevel >= requiredLevel) {
+          score += baseWeight;
+          skillGaps.push({ skill: req.skill, status: 'match' });
+        } else if (candidateLevel === requiredLevel - 1) {
+          score += baseWeight * 0.7;
+          skillGaps.push({ skill: req.skill, status: 'partial' });
+        } else {
+          score += baseWeight * 0.3;
+          skillGaps.push({ skill: req.skill, status: 'gap' });
+        }
         continue;
       }
 

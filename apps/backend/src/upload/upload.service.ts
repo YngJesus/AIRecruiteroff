@@ -96,8 +96,12 @@ export class UploadService {
       if (!text) {
         throw new Error('No text extracted from image');
       }
+      this.assertReadableOcrText(text);
       return text;
     } catch (err: any) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
       throw new BadRequestException(
         `Failed to extract text from image: ${err?.message ?? 'Unknown error'}`,
       );
@@ -121,6 +125,24 @@ export class UploadService {
     const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
     const tag = cipher.getAuthTag();
     return Buffer.concat([iv, tag, encrypted]);
+  }
+
+  /** Reject scans that are too short or mostly noise (OCR quality gate). */
+  private assertReadableOcrText(text: string): void {
+    const trimmed = text.trim();
+    if (trimmed.length < 100) {
+      throw new BadRequestException(
+        'Could not extract sufficient text from image. Please ensure the image is clear and readable.',
+      );
+    }
+    const alnumMatches = trimmed.match(/[a-zA-Z0-9\s]/g) ?? [];
+    const alphanumericRatio =
+      trimmed.length > 0 ? alnumMatches.length / trimmed.length : 0;
+    if (alphanumericRatio < 0.6) {
+      throw new BadRequestException(
+        'Image quality too low for reliable text extraction. Please upload a clearer image or PDF.',
+      );
+    }
   }
 
   private decryptBuffer(buffer: Buffer): Buffer {

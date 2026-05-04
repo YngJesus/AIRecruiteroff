@@ -90,54 +90,75 @@ export function CandidateDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6 text-center text-gray-400">
-        Loading...
+      <div className="min-h-screen bg-slate-950 p-6 text-center text-slate-400">
+        <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent align-middle" />{" "}
+        Loading candidate…
       </div>
     );
   }
 
   if (!candidate) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6 text-center text-red-400">
+      <div className="min-h-screen bg-slate-950 p-6 text-center text-rose-400">
         Candidate not found
       </div>
     );
   }
 
+  const gaps = candidate.skillGaps ?? [];
+  const matchCount = gaps.filter((g: any) => g.status === "match").length;
+  const partialCount = gaps.filter((g: any) => g.status === "partial").length;
+  const gapCount = gaps.filter((g: any) => g.status === "gap").length;
+
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-indigo-600/15 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-600/10 blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl p-4 sm:p-6">
       <button
         onClick={() => navigate(-1)}
-        className="text-blue-400 hover:text-blue-300 mb-6"
+        className="mb-6 text-sm font-medium text-blue-400 hover:text-blue-300"
       >
         ← Back
       </button>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">{error}</div>
+        <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
+          {error}
+        </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Match Score Card */}
-        <div className="bg-gray-800 p-6 rounded-lg">
-          <h3 className="text-gray-400 text-sm mb-2">Match Score</h3>
+        <div className="rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 to-slate-900/50 p-6 shadow-xl shadow-black/20">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Match score
+          </h3>
           <div
-            className={`text-5xl font-bold ${
+            className={`mt-2 text-5xl font-bold tabular-nums ${
               candidate.matchScore >= 70
-                ? "text-green-400"
+                ? "text-emerald-400"
                 : candidate.matchScore >= 40
-                  ? "text-yellow-400"
-                  : "text-red-400"
+                  ? "text-amber-400"
+                  : "text-rose-400"
             }`}
           >
             {candidate.matchScore.toFixed(0)}%
           </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Weighted by required vs nice-to-have skills and level fit.
+          </p>
         </div>
 
         {/* Status Card */}
-        <div className="bg-gray-800 p-6 rounded-lg">
-          <h3 className="text-gray-400 text-sm mb-2">Status</h3>
-          <p className="text-2xl font-semibold text-white capitalize">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 backdrop-blur-sm">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Status
+          </h3>
+          <p className="mt-2 text-2xl font-semibold capitalize text-white">
             {candidate.status}
           </p>
 
@@ -148,7 +169,7 @@ export function CandidateDetailPage() {
                 onChange={(e) =>
                   setSelectedStatus(e.target.value as Candidate["status"])
                 }
-                className="flex-1 px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
               >
                 <option value="uploaded">Uploaded</option>
                 <option value="processing">Processing</option>
@@ -164,7 +185,7 @@ export function CandidateDetailPage() {
                 disabled={
                   isUpdatingStatus || selectedStatus === (candidate.status as any)
                 }
-                className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-semibold transition"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:bg-slate-600"
               >
                 {isUpdatingStatus ? "Saving..." : "Update"}
               </button>
@@ -179,14 +200,16 @@ export function CandidateDetailPage() {
         </div>
 
         {/* File Name Card */}
-        <div className="bg-gray-800 p-6 rounded-lg">
-          <h3 className="text-gray-400 text-sm mb-2">CV File</h3>
-          <p className="text-lg text-white truncate">{candidate.cvFileName}</p>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 backdrop-blur-sm">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            CV file
+          </h3>
+          <p className="mt-2 truncate text-lg text-white">{candidate.cvFileName}</p>
           <button
             type="button"
             onClick={handleDownloadCv}
             disabled={isDownloading}
-            className="text-blue-400 text-sm hover:text-blue-300 disabled:text-gray-500"
+            className="mt-3 text-sm font-medium text-blue-400 hover:text-blue-300 disabled:text-slate-500"
           >
             {isDownloading ? "Downloading..." : "Download CV"}
           </button>
@@ -194,7 +217,7 @@ export function CandidateDetailPage() {
       </div>
 
       {["uploaded", "processing"].includes(candidate.status) && (
-        <div className="mb-6 p-4 bg-blue-900/40 border border-blue-700 rounded text-blue-200">
+        <div className="mb-6 rounded-xl border border-blue-700/50 bg-blue-950/40 p-4 text-sm text-blue-200">
           Candidate analysis is in progress. This page refreshes automatically
           every 3 seconds.
         </div>
@@ -202,8 +225,8 @@ export function CandidateDetailPage() {
 
       {/* Parsed Data */}
       {candidate.parsedData && (
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">
+        <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">
             Parsed Information
           </h2>
 
@@ -214,7 +237,7 @@ export function CandidateDetailPage() {
                 {candidate.parsedData.skills.map((skill: any, idx: number) => (
                   <span
                     key={idx}
-                    className="bg-blue-900 text-blue-200 px-3 py-1 rounded"
+                    className="rounded-lg bg-blue-950/80 px-3 py-1 text-blue-200 ring-1 ring-blue-800/50"
                   >
                     {skill.name ?? skill.skill ?? "Unknown skill"}
                     {(skill.level ?? skill.proficiency) &&
@@ -255,19 +278,22 @@ export function CandidateDetailPage() {
 
       {/* Skill Gaps */}
       {candidate.skillGaps && candidate.skillGaps.length > 0 && (
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Skill Gaps</h2>
+        <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Skill match</h2>
           <div className="space-y-2">
             {candidate.skillGaps.map((gap: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between">
-                <span className="text-gray-300">{gap.skill}</span>
+              <div
+                key={idx}
+                className="flex items-center justify-between rounded-xl border border-slate-800/60 bg-slate-800/30 px-3 py-2"
+              >
+                <span className="text-slate-300">{gap.skill}</span>
                 <span
-                  className={`px-3 py-1 rounded text-sm font-semibold ${
+                  className={`rounded-lg px-3 py-1 text-sm font-semibold ${
                     gap.status === "match"
-                      ? "bg-green-900 text-green-200"
+                      ? "bg-emerald-950/80 text-emerald-200 ring-1 ring-emerald-800/50"
                       : gap.status === "partial"
-                        ? "bg-yellow-900 text-yellow-200"
-                        : "bg-red-900 text-red-200"
+                        ? "bg-amber-950/80 text-amber-200 ring-1 ring-amber-800/50"
+                        : "bg-rose-950/80 text-rose-200 ring-1 ring-rose-800/50"
                   }`}
                 >
                   {gap.status}
@@ -278,15 +304,48 @@ export function CandidateDetailPage() {
         </div>
       )}
 
+      {gaps.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 to-indigo-950/30 p-6 ring-1 ring-indigo-900/30">
+          <h2 className="mb-2 text-xl font-semibold text-white">
+            Score breakdown
+          </h2>
+          <p className="mb-4 text-sm text-slate-400">
+            {matchCount} full skill matches, {partialCount} partial (close level
+            or related skill), {gapCount} gaps — out of {gaps.length} evaluated
+            job skills. The overall % weights required skills more than
+            nice-to-have.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {gaps.map((g: any, i: number) => (
+              <li key={i} className="flex gap-2 border-l-2 border-slate-600 pl-3">
+                <span className="font-medium text-white">{g.skill}</span>
+                <span className="text-slate-500">—</span>
+                <span className="text-slate-400">
+                  {g.status === "match" &&
+                    "Meets or exceeds the required proficiency level."}
+                  {g.status === "partial" &&
+                    "Close: related skill or one level below requirement."}
+                  {g.status === "gap" &&
+                    "Missing or well below the required level."}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {candidate.generatedQuestions &&
         candidate.generatedQuestions.length > 0 && (
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-6">
+            <h2 className="mb-4 text-xl font-semibold text-white">
               Interview Questions
             </h2>
             <div className="space-y-4">
               {candidate.generatedQuestions.map((q: any, idx: number) => (
-                <div key={idx} className="border border-gray-700 rounded p-4">
+                <div
+                  key={idx}
+                  className="rounded-xl border border-slate-700/80 bg-slate-800/30 p-4"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-blue-300 font-semibold">
                       {q.skill}
@@ -304,6 +363,7 @@ export function CandidateDetailPage() {
             </div>
           </div>
         )}
+      </div>
     </div>
   );
 }

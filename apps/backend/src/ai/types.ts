@@ -1,6 +1,11 @@
 export interface ParsedCV {
   skills: { name: string; level?: string }[];
-  experience: { company?: string; role?: string; duration?: string }[];
+  experience: {
+    company?: string;
+    role?: string;
+    duration?: string;
+    technologies?: string[];
+  }[];
   education: { school?: string; degree?: string; field?: string }[];
   certifications: { name?: string; issuer?: string; date?: string }[];
 }
