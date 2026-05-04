@@ -1,14 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CandidatesController } from '../src/candidates/candidates.controller';
-import { CandidatesService } from '../src/candidates/candidates.service';
-import { UploadService } from '../src/upload/upload.service';
-import { JobsService } from '../src/jobs/jobs.service';
+import { Test } from '@nestjs/testing';
+import { CandidatesController } from './candidates.controller';
+import { CandidatesService } from './candidates.service';
+import { UploadService } from 'src/upload/upload.service';
+import { JobsService } from 'src/jobs/jobs.service';
 import { getQueueToken } from '@nestjs/bullmq';
 
-describe('Candidates upload (e2e)', () => {
-  let controller: CandidatesController;
-
-  beforeEach(async () => {
+describe('CandidatesController upload', () => {
+  it('queues uploaded CV and returns queued status', async () => {
     const candidatesService = {
       create: jest.fn().mockResolvedValue({ id: 'cand-1' }),
       findOne: jest.fn(),
@@ -28,7 +26,7 @@ describe('Candidates upload (e2e)', () => {
       add: jest.fn().mockResolvedValue(undefined),
     };
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+    const module = await Test.createTestingModule({
       controllers: [CandidatesController],
       providers: [
         { provide: CandidatesService, useValue: candidatesService },
@@ -38,16 +36,18 @@ describe('Candidates upload (e2e)', () => {
       ],
     }).compile();
 
-    controller = moduleFixture.get(CandidatesController);
-  });
-
-  it('queues upload task', async () => {
+    const controller = module.get(CandidatesController);
     const result = await controller.uploadCVAndCreateCandidate('job-1', {
       size: 100,
-      originalname: 'resume.pdf',
+      originalname: 'cv.pdf',
       mimetype: 'application/pdf',
-      buffer: Buffer.from('dummy-cv'),
+      buffer: Buffer.from('test'),
     });
+
+    expect(queue.add).toHaveBeenCalledWith(
+      'analyze-cv',
+      expect.objectContaining({ candidateId: 'cand-1', jobId: 'job-1' }),
+    );
     expect(result).toEqual({ candidateId: 'cand-1', status: 'queued' });
   });
 });

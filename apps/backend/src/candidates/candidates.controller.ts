@@ -12,7 +12,9 @@ import {
   UseInterceptors,
   BadRequestException,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import {
@@ -32,8 +34,9 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { UpdateCandidateStatusDto } from './dto/update-candidate-status.dto';
 import { UploadService } from 'src/upload/upload.service';
-import { ParserService } from './parser.service';
 import { JobsService } from 'src/jobs/jobs.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @ApiBearerAuth()
 @ApiTags('Candidates')
@@ -43,8 +46,8 @@ export class CandidatesController {
   constructor(
     private readonly candidatesService: CandidatesService,
     private readonly uploadService: UploadService,
-    private readonly parserService: ParserService,
     private readonly jobsService: JobsService,
+    @InjectQueue('cv-processing') private readonly cvQueue: Queue,
   ) {}
   @Post()
   @HttpCode(201)
@@ -131,8 +134,8 @@ export class CandidatesController {
       required: ['file'],
     },
   })
-  @ApiOperation({ summary: 'Upload CV file, create candidate, and parse' })
-  @ApiResponse({ status: 201, description: 'Candidate created' })
+  @ApiOperation({ summary: 'Upload CV file and enqueue analysis' })
+  @ApiResponse({ status: 201, description: 'Candidate queued for processing' })
   @ApiResponse({ status: 400, description: 'Invalid file or jobId' })
   @ApiResponse({ status: 413, description: 'File too large' })
   async uploadCVAndCreateCandidate(
@@ -160,17 +163,6 @@ export class CandidatesController {
     // Save file
     const filepath = await this.uploadService.handleFileUpload(file);
 
-    // Extract text
-    let rawText = '';
-    if (file.mimetype === 'application/pdf') {
-      rawText = await this.uploadService.extractTextFromPDF(filepath);
-    } else {
-      rawText = await this.uploadService.extractTextFromImage(filepath);
-    }
-
-    // Parse CV
-    const parsedData = this.parserService.parseCV(rawText);
-
     // Create candidate
     const candidate = await this.candidatesService.create({
       jobId,
@@ -178,12 +170,45 @@ export class CandidatesController {
       cvFilePath: filepath,
     } as any);
 
-    // Update with parsed data
-    const updated = await this.candidatesService.updateParsedData(
-      candidate.id,
-      parsedData,
-    );
+    await this.cvQueue.add('analyze-cv', {
+      candidateId: candidate.id,
+      filepath,
+      mimetype: file.mimetype,
+      jobId,
+    });
 
-    return updated;
+    return {
+      candidateId: candidate.id,
+      status: 'queued',
+    };
+  }
+
+  @Get(':id/status')
+  @ApiOperation({ summary: 'Get candidate processing status' })
+  @ApiResponse({ status: 200, description: 'Current candidate status' })
+  async getStatus(@Param('id') id: string) {
+    const candidate = await this.candidatesService.findOne(id);
+    return {
+      id: candidate.id,
+      status: candidate.status,
+      processingError: candidate.processingError ?? null,
+      updatedAt: candidate.updatedAt,
+    };
+  }
+
+  @Get(':id/cv')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER, UserRole.TECH_LEAD)
+  @ApiOperation({ summary: 'Download decrypted CV file' })
+  @ApiResponse({ status: 200, description: 'CV file stream' })
+  async downloadCV(@Param('id') id: string, @Res() res: Response) {
+    const candidate = await this.candidatesService.findOne(id);
+    const stream = this.uploadService.getDecryptedStream(candidate.cvFilePath);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${candidate.cvFileName}"`,
+    );
+    res.setHeader('Content-Type', 'application/octet-stream');
+    stream.pipe(res);
   }
 }

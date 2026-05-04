@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { candidatesApi } from "../../api/candidates";
+import { candidatesApi, type Candidate } from "../../api/candidates";
 
 export function CandidateDetailPage() {
   const { candidateId } = useParams();
   const navigate = useNavigate();
-  const [candidate, setCandidate] = useState<any>(null);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -14,15 +14,25 @@ export function CandidateDetailPage() {
     fetchCandidate();
   }, [candidateId]);
 
-  const fetchCandidate = async () => {
+  useEffect(() => {
+    if (!candidateId || !candidate) return;
+    if (!["uploaded", "processing"].includes(candidate.status)) return;
+
+    const timer = setInterval(() => {
+      fetchCandidate(false);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [candidateId, candidate?.status]);
+
+  const fetchCandidate = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       const response = await candidatesApi.getById(candidateId!);
       setCandidate(response.data);
     } catch (err: any) {
       setError(err.message || "Failed to load candidate");
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
@@ -78,14 +88,29 @@ export function CandidateDetailPage() {
           <p className="text-2xl font-semibold text-white capitalize">
             {candidate.status}
           </p>
+          {candidate.processingError && (
+            <p className="text-red-400 text-xs mt-2">{candidate.processingError}</p>
+          )}
         </div>
 
         {/* File Name Card */}
         <div className="bg-gray-800 p-6 rounded-lg">
           <h3 className="text-gray-400 text-sm mb-2">CV File</h3>
           <p className="text-lg text-white truncate">{candidate.cvFileName}</p>
+          <a
+            href={candidatesApi.downloadCVUrl(candidate.id)}
+            className="text-blue-400 text-sm hover:text-blue-300"
+          >
+            Download CV
+          </a>
         </div>
       </div>
+
+      {["uploaded", "processing"].includes(candidate.status) && (
+        <div className="mb-6 p-4 bg-blue-900/40 border border-blue-700 rounded text-blue-200">
+          Candidate analysis is in progress. This page refreshes automatically every 3 seconds.
+        </div>
+      )}
 
       {/* Parsed Data */}
       {candidate.parsedData && (
@@ -141,7 +166,7 @@ export function CandidateDetailPage() {
 
       {/* Skill Gaps */}
       {candidate.skillGaps && candidate.skillGaps.length > 0 && (
-        <div className="bg-gray-800 rounded-lg p-6">
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Skill Gaps</h2>
           <div className="space-y-2">
             {candidate.skillGaps.map((gap: any, idx: number) => (
@@ -158,6 +183,28 @@ export function CandidateDetailPage() {
                 >
                   {gap.status}
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {candidate.generatedQuestions && candidate.generatedQuestions.length > 0 && (
+        <div className="bg-gray-800 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Interview Questions</h2>
+          <div className="space-y-4">
+            {candidate.generatedQuestions.map((q: any, idx: number) => (
+              <div key={idx} className="border border-gray-700 rounded p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-blue-300 font-semibold">{q.skill}</span>
+                  <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-200">
+                    {q.difficulty}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded bg-purple-900 text-purple-200">
+                    {q.type}
+                  </span>
+                </div>
+                <p className="text-gray-200">{q.question}</p>
               </div>
             ))}
           </div>

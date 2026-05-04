@@ -3,7 +3,7 @@ import { candidatesApi } from "../api/candidates";
 
 interface CVUploadModalProps {
   jobId: string;
-  onSuccess: (candidate: any) => void;
+  onSuccess: (payload: { candidateId: string; status: "queued" }) => void;
   onClose: () => void;
 }
 

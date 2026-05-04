@@ -11,8 +11,10 @@ import { Job } from 'src/jobs/entities/job.entity';
 
 export enum CandidateStatus {
   UPLOADED = 'uploaded',
+  PROCESSING = 'processing',
   PARSED = 'parsed',
   MATCHED = 'matched',
+  FAILED = 'failed',
   AWAITING_INTERVIEW = 'awaiting-interview',
   REJECTED = 'rejected',
 }
@@ -51,6 +53,9 @@ export class Candidate {
 
   @Column({ type: 'jsonb', nullable: true })
   generatedQuestions: { question: string; difficulty: string; skill: string }[];
+
+  @Column({ type: 'text', nullable: true })
+  processingError?: string;
 
   @Column({
     type: 'enum',

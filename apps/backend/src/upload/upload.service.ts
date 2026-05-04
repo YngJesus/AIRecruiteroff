@@ -1,6 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ConfigService } from '@nestjs/config';
+import { Readable } from 'stream';
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
 
 interface UploadedFile {
   mimetype: string;
@@ -11,18 +14,24 @@ interface UploadedFile {
 @Injectable()
 export class UploadService {
   private readonly uploadDir = path.resolve(process.cwd(), 'uploads');
+  private readonly encryptionKey: Buffer;
 
-  constructor() {
+  constructor(private readonly config: ConfigService) {
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
     }
+    const keySource = this.config.get<string>('CV_ENCRYPTION_KEY', 'dev-key');
+    this.encryptionKey = createHash('sha256').update(keySource).digest();
   }
 
   async handleFileUpload(file: UploadedFile): Promise<string> {
     if (!file) throw new BadRequestException('No file uploaded');
 
+    const { fileTypeFromBuffer } = await import('file-type');
+    const detectedType = await fileTypeFromBuffer(file.buffer);
+    const detectedMime = detectedType?.mime || file.mimetype;
     const allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
-    if (!allowedMimes.includes(file.mimetype)) {
+    if (!allowedMimes.includes(detectedMime)) {
       throw new BadRequestException('Only PDF and images (JPG, PNG) allowed');
     }
 
@@ -30,13 +39,14 @@ export class UploadService {
     const filename = `${Date.now()}-${safeOriginalName}`;
     const filepath = path.join(this.uploadDir, filename);
 
-    await fs.promises.writeFile(filepath, file.buffer);
+    const encryptedBuffer = this.encryptBuffer(file.buffer);
+    await fs.promises.writeFile(filepath, encryptedBuffer);
     return filepath;
   }
 
   async extractTextFromPDF(filepath: string): Promise<string> {
     try {
-      const fileBuffer = await fs.promises.readFile(filepath);
+      const fileBuffer = await this.readDecryptedFile(filepath);
 
       // Dynamic import to stay compatible with NodeNext/ESM interop.
       const pdfModule: any = await import('pdf-parse');
@@ -76,9 +86,10 @@ export class UploadService {
 
   async extractTextFromImage(filepath: string): Promise<string> {
     try {
+      const imageBuffer = await this.readDecryptedFile(filepath);
       const { createWorker } = await import('tesseract.js');
       const worker = await createWorker('eng');
-      const { data } = await worker.recognize(filepath);
+      const { data } = await worker.recognize(imageBuffer);
       await worker.terminate();
 
       const text = data?.text?.trim() ?? '';
@@ -90,6 +101,42 @@ export class UploadService {
       throw new BadRequestException(
         `Failed to extract text from image: ${err?.message ?? 'Unknown error'}`,
       );
+    }
+  }
+
+  getDecryptedStream(filepath: string): Readable {
+    const encrypted = fs.readFileSync(filepath);
+    const decrypted = this.decryptBuffer(encrypted);
+    return Readable.from(decrypted);
+  }
+
+  private async readDecryptedFile(filepath: string): Promise<Buffer> {
+    const encrypted = await fs.promises.readFile(filepath);
+    return this.decryptBuffer(encrypted);
+  }
+
+  private encryptBuffer(buffer: Buffer): Buffer {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
+    const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return Buffer.concat([iv, tag, encrypted]);
+  }
+
+  private decryptBuffer(buffer: Buffer): Buffer {
+    if (buffer.length <= 28) {
+      return buffer;
+    }
+    const iv = buffer.subarray(0, 12);
+    const tag = buffer.subarray(12, 28);
+    const data = buffer.subarray(28);
+    try {
+      const decipher = createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+      decipher.setAuthTag(tag);
+      return Buffer.concat([decipher.update(data), decipher.final()]);
+    } catch {
+      // Backward compatibility for previously stored plain files.
+      return buffer;
     }
   }
 }

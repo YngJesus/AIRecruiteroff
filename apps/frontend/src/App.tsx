@@ -35,8 +35,22 @@ export function App() {
               <Navbar />
               <Routes>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/jobs" element={<JobsListPage />} />
-                <Route path="/jobs/new" element={<JobCreatePage />} />
+                <Route
+                  path="/jobs"
+                  element={
+                    <ProtectedRoute requiredRole="recruiter">
+                      <JobsListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/jobs/new"
+                  element={
+                    <ProtectedRoute requiredRole="recruiter">
+                      <JobCreatePage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/candidates/:jobId"
                   element={<CandidatesListPage />}
@@ -57,22 +71,6 @@ export function App() {
         {/* Catch all - redirect to dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        <Route
-          path="/jobs"
-          element={
-            <ProtectedRoute requiredRole="recruiter">
-              <JobsListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/jobs/new"
-          element={
-            <ProtectedRoute requiredRole="recruiter">
-              <JobCreatePage />
-            </ProtectedRoute>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

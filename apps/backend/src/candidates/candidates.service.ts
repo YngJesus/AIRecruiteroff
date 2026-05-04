@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -76,6 +75,19 @@ export class CandidatesService {
     const candidate = await this.findOne(id);
     candidate.parsedData = parsedData;
     candidate.status = CandidateStatus.PARSED;
+    return this.candidatesRepository.save(candidate);
+  }
+
+  async updateGeneratedQuestions(id: string, questions: any[]): Promise<Candidate> {
+    const candidate = await this.findOne(id);
+    candidate.generatedQuestions = questions;
+    return this.candidatesRepository.save(candidate);
+  }
+
+  async markProcessingFailed(id: string, message: string): Promise<Candidate> {
+    const candidate = await this.findOne(id);
+    candidate.status = CandidateStatus.FAILED;
+    candidate.processingError = message;
     return this.candidatesRepository.save(candidate);
   }
 }

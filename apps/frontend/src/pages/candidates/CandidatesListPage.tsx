@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { candidatesApi, type Candidate } from "../../api/candidates";
 import { jobsApi } from "../../api/jobs";
+import { CVUploadModal } from "../../components/CVUploadModal";
 
 export function CandidatesListPage() {
   const { jobId } = useParams();
@@ -10,6 +11,10 @@ export function CandidatesListPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -51,6 +56,17 @@ export function CandidatesListPage() {
     );
   }
 
+  const filteredCandidates = candidates
+    .filter((candidate) =>
+      statusFilter === "all" ? true : candidate.status === statusFilter,
+    )
+    .filter((candidate) =>
+      candidate.cvFileName.toLowerCase().includes(search.toLowerCase()),
+    )
+    .sort((a, b) =>
+      sortOrder === "desc" ? b.matchScore - a.matchScore : a.matchScore - b.matchScore,
+    );
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <button
@@ -60,14 +76,53 @@ export function CandidatesListPage() {
         ← Back to Jobs
       </button>
 
-      <h1 className="text-3xl font-bold text-white mb-2">{jobTitle}</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-3xl font-bold text-white">{jobTitle}</h1>
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+        >
+          + Upload CV
+        </button>
+      </div>
       <h2 className="text-lg text-gray-300 mb-8">Candidates</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by filename..."
+          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+        >
+          <option value="all">All statuses</option>
+          <option value="uploaded">Uploaded</option>
+          <option value="processing">Processing</option>
+          <option value="parsed">Parsed</option>
+          <option value="matched">Matched</option>
+          <option value="failed">Failed</option>
+          <option value="awaiting-interview">Awaiting interview</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+        >
+          <option value="desc">Score: high to low</option>
+          <option value="asc">Score: low to high</option>
+        </select>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">{error}</div>
       )}
 
-      {candidates.length === 0 ? (
+      {filteredCandidates.length === 0 ? (
         <div className="text-center text-gray-400 py-12">No candidates yet</div>
       ) : (
         <div className="overflow-x-auto">
@@ -81,7 +136,7 @@ export function CandidatesListPage() {
               </tr>
             </thead>
             <tbody>
-              {candidates.map((candidate) => (
+              {filteredCandidates.map((candidate) => (
                 <tr key={candidate.id} className="border-b border-gray-700">
                   <td className="px-6 py-4">{candidate.cvFileName}</td>
                   <td className="px-6 py-4">
@@ -117,6 +172,17 @@ export function CandidatesListPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {showUploadModal && jobId && (
+        <CVUploadModal
+          jobId={jobId}
+          onSuccess={(payload) => navigate(`/candidates/${payload.candidateId}`)}
+          onClose={() => {
+            setShowUploadModal(false);
+            fetchData();
+          }}
+        />
       )}
     </div>
   );
