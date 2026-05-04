@@ -1,18 +1,29 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { candidatesApi, type Candidate } from "../../api/candidates";
+import { useAuth } from "../../context/AuthContext";
 
 export function CandidateDetailPage() {
   const { candidateId } = useParams();
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [selectedStatus, setSelectedStatus] =
+    useState<Candidate["status"]>("uploaded");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!candidateId) return;
     fetchCandidate();
   }, [candidateId]);
+
+  useEffect(() => {
+    if (!candidate) return;
+    setSelectedStatus(candidate.status);
+  }, [candidate?.id, candidate?.status]);
 
   useEffect(() => {
     if (!candidateId || !candidate) return;
@@ -33,6 +44,47 @@ export function CandidateDetailPage() {
       setError(err.message || "Failed to load candidate");
     } finally {
       if (showLoading) setIsLoading(false);
+    }
+  };
+
+  const handleDownloadCv = async () => {
+    if (!candidate) return;
+    setError("");
+    setIsDownloading(true);
+    try {
+      const response = await candidatesApi.downloadCV(candidate.id);
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = candidate.cvFileName || "cv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Failed to download CV");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!candidate) return;
+    setError("");
+    setIsUpdatingStatus(true);
+    try {
+      const response = await candidatesApi.updateStatus(
+        candidate.id,
+        selectedStatus,
+      );
+      setCandidate(response.data);
+    } catch (err: any) {
+      setError(err.message || "Failed to update status");
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -88,6 +140,37 @@ export function CandidateDetailPage() {
           <p className="text-2xl font-semibold text-white capitalize">
             {candidate.status}
           </p>
+
+          {hasRole(["recruiter", "admin"]) && (
+            <div className="mt-4 flex items-center gap-2">
+              <select
+                value={selectedStatus}
+                onChange={(e) =>
+                  setSelectedStatus(e.target.value as Candidate["status"])
+                }
+                className="flex-1 px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+              >
+                <option value="uploaded">Uploaded</option>
+                <option value="processing">Processing</option>
+                <option value="parsed">Parsed</option>
+                <option value="matched">Matched</option>
+                <option value="failed">Failed</option>
+                <option value="awaiting-interview">Awaiting interview</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleUpdateStatus}
+                disabled={
+                  isUpdatingStatus || selectedStatus === (candidate.status as any)
+                }
+                className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-semibold transition"
+              >
+                {isUpdatingStatus ? "Saving..." : "Update"}
+              </button>
+            </div>
+          )}
+
           {candidate.processingError && (
             <p className="text-red-400 text-xs mt-2">
               {candidate.processingError}
@@ -99,12 +182,14 @@ export function CandidateDetailPage() {
         <div className="bg-gray-800 p-6 rounded-lg">
           <h3 className="text-gray-400 text-sm mb-2">CV File</h3>
           <p className="text-lg text-white truncate">{candidate.cvFileName}</p>
-          <a
-            href={candidatesApi.downloadCVUrl(candidate.id)}
-            className="text-blue-400 text-sm hover:text-blue-300"
+          <button
+            type="button"
+            onClick={handleDownloadCv}
+            disabled={isDownloading}
+            className="text-blue-400 text-sm hover:text-blue-300 disabled:text-gray-500"
           >
-            Download CV
-          </a>
+            {isDownloading ? "Downloading..." : "Download CV"}
+          </button>
         </div>
       </div>
 

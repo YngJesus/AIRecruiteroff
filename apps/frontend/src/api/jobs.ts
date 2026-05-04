@@ -10,6 +10,7 @@ export interface Job {
     priority: "required" | "nice-to-have";
   }[];
   createdById: string;
+  candidateCount?: number;
   createdAt: string;
   updatedAt: string;
 }

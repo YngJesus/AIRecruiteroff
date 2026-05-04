@@ -5,10 +5,12 @@ import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobsListPage } from "./pages/jobs/JobsListPage";
 import { JobCreatePage } from "./pages/jobs/JobCreatePage";
+import { JobEditPage } from "./pages/jobs/JobEditPage";
 import { useAuth } from "./context/AuthContext";
 import { CandidateDetailPage } from "./pages/candidates/CandidateDetailPage";
 import { CandidatesListPage } from "./pages/candidates/CandidatesListPage";
 import { Navbar } from "./pages/Navbar";
+import { UsersManagementPage } from "./pages/admin/UsersManagementPage";
 
 export function App() {
   const { isLoading } = useAuth();
@@ -52,12 +54,28 @@ export function App() {
                   }
                 />
                 <Route
+                  path="/jobs/:jobId/edit"
+                  element={
+                    <ProtectedRoute requiredRole={["recruiter", "admin"]}>
+                      <JobEditPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/jobs/:jobId/candidates"
                   element={<CandidatesListPage />}
                 />
                 <Route
                   path="/candidates/:candidateId"
                   element={<CandidateDetailPage />}
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <UsersManagementPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/"

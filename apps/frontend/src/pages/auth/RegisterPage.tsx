@@ -8,7 +8,7 @@ export function RegisterPage() {
     password: "",
     firstName: "",
     lastName: "",
-    role: "recruiter" as "admin" | "recruiter" | "tech_lead",
+    role: "recruiter" as "recruiter" | "tech_lead",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -128,7 +128,6 @@ export function RegisterPage() {
             >
               <option value="recruiter">Recruiter</option>
               <option value="tech_lead">Tech Lead</option>
-              <option value="admin">Admin</option>
             </select>
           </div>
 

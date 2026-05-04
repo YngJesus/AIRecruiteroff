@@ -7,6 +7,8 @@ export interface DashboardSummary {
   candidatesByStatus: Record<string, number>;
   recentCandidates: Array<{
     id: string;
+    jobId: string;
+    jobTitle: string;
     cvFileName: string;
     status: string;
     matchScore: number;

@@ -1,10 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { AuthResponseDto } from 'src/common/dto/auth-response.dto';
+import { UserRole } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +15,16 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const user = await this.usersService.create(registerDto);
+    if (registerDto.role === UserRole.ADMIN) {
+      throw new BadRequestException(
+        'Admin users cannot be created via public registration',
+      );
+    }
+
+    const user = await this.usersService.create({
+      ...registerDto,
+      role: registerDto.role ?? UserRole.RECRUITER,
+    });
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,

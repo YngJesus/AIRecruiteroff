@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -47,5 +48,16 @@ export class UsersService {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  async adminUpdate(id: string, dto: AdminUpdateUserDto): Promise<User> {
+    const user = await this.findById(id);
+    Object.assign(user, dto);
+    return this.usersRepository.save(user);
+  }
+
+  async adminRemove(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.usersRepository.remove(user);
   }
 }

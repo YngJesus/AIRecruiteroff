@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsIn } from 'class-validator';
 import { IsStrongPassword } from 'src/common/validators/password.validator';
 import { UserRole } from 'src/users/entities/user.entity';
 
@@ -15,7 +15,7 @@ export class RegisterDto {
   @IsString()
   lastName: string;
 
-  @IsEnum(UserRole)
+  @IsIn([UserRole.RECRUITER, UserRole.TECH_LEAD])
   @IsOptional()
   role?: UserRole;
 }

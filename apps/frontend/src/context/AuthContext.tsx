@@ -8,6 +8,8 @@ export interface User {
   role: "admin" | "recruiter" | "tech_lead";
 }
 
+type PublicRegisterRole = "recruiter" | "tech_lead";
+
 export interface AuthContextType {
   currentUser: User | null;
   token: string | null;
@@ -19,7 +21,7 @@ export interface AuthContextType {
     password: string,
     firstName: string,
     lastName: string,
-    role: "admin" | "recruiter" | "tech_lead",
+    role: PublicRegisterRole,
   ) => Promise<void>;
   logout: () => void;
   hasRole: (
@@ -83,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     password: string,
     firstName: string,
     lastName: string,
-    role: "admin" | "recruiter" | "tech_lead",
+    role: PublicRegisterRole,
   ) => {
     try {
       setIsLoading(true);

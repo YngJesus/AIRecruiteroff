@@ -36,9 +36,25 @@ export class JobsService {
   }
 
   async findAll(): Promise<Job[]> {
-    return this.jobsRepository.find({
+    const jobs = await this.jobsRepository.find({
       relations: ['createdBy'],
     });
+
+    const counts = await this.candidatesRepository
+      .createQueryBuilder('c')
+      .select('c.jobId', 'jobId')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('c.jobId')
+      .getRawMany<{ jobId: string; count: string }>();
+
+    const countByJobId = new Map(
+      counts.map((row) => [row.jobId, Number(row.count)]),
+    );
+
+    return jobs.map((job) => ({
+      ...job,
+      candidateCount: countByJobId.get(job.id) ?? 0,
+    })) as any;
   }
 
   async findOne(id: string): Promise<Job> {

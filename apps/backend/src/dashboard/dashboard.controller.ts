@@ -7,6 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -18,7 +19,7 @@ export class DashboardController {
   @Get('summary')
   @ApiOperation({ summary: 'Get dashboard summary stats' })
   @ApiResponse({ status: 200, description: 'Dashboard summary' })
-  getSummary() {
-    return this.dashboardService.getSummary();
+  getSummary(@CurrentUser() user: any) {
+    return this.dashboardService.getSummary(user);
   }
 }

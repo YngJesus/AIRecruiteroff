@@ -31,6 +31,35 @@ export function DashboardPage() {
     navigate("/login");
   };
 
+  const totalStatusCount =
+    summary?.candidatesByStatus
+      ? Object.values(summary.candidatesByStatus).reduce(
+          (sum, v) => sum + Number(v || 0),
+          0,
+        )
+      : 0;
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "matched":
+        return "bg-green-500";
+      case "parsed":
+        return "bg-blue-500";
+      case "processing":
+        return "bg-yellow-500";
+      case "uploaded":
+        return "bg-gray-500";
+      case "awaiting-interview":
+        return "bg-purple-500";
+      case "rejected":
+        return "bg-red-600";
+      case "failed":
+        return "bg-red-500";
+      default:
+        return "bg-slate-500";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
@@ -99,6 +128,27 @@ export function DashboardPage() {
               <h2 className="text-xl font-semibold text-white mb-4">
                 Candidates by Status
               </h2>
+              {totalStatusCount > 0 && summary && (
+                <div className="mb-4">
+                  <div className="h-3 w-full bg-gray-700 rounded overflow-hidden flex">
+                    {Object.entries(summary.candidatesByStatus).map(
+                      ([status, count]) => (
+                        <div
+                          key={status}
+                          className={`${statusColor(status)} h-full`}
+                          style={{
+                            width: `${(Number(count) / totalStatusCount) * 100}%`,
+                          }}
+                          title={`${status}: ${count}`}
+                        />
+                      ),
+                    )}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-400">
+                    Total: {totalStatusCount}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2 text-gray-300">
                 {Object.keys(summary.candidatesByStatus).length === 0 ? (
                   <p className="text-gray-500">No candidates yet</p>
@@ -106,7 +156,14 @@ export function DashboardPage() {
                   Object.entries(summary.candidatesByStatus).map(
                     ([status, count]) => (
                       <div key={status} className="flex justify-between">
-                        <span className="capitalize">{status}</span>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className={`inline-block h-2 w-2 rounded-full ${statusColor(
+                              status,
+                            )}`}
+                          />
+                          <span className="capitalize">{status}</span>
+                        </span>
                         <span>{count}</span>
                       </div>
                     ),
@@ -138,7 +195,11 @@ export function DashboardPage() {
                         </span>
                       </div>
                       <div className="text-sm text-gray-400 mt-1">
-                        Match {candidate.matchScore}%
+                        <span className="text-gray-300">
+                          {candidate.jobTitle}
+                        </span>
+                        <span className="text-gray-500"> • </span>
+                        <span>Match {candidate.matchScore}%</span>
                       </div>
                     </button>
                   ))

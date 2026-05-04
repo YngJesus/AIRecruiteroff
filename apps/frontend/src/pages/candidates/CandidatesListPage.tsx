@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { candidatesApi, type Candidate } from "../../api/candidates";
 import { jobsApi } from "../../api/jobs";
 import { CVUploadModal } from "../../components/CVUploadModal";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 export function CandidatesListPage() {
   const { jobId } = useParams();
@@ -15,6 +16,12 @@ export function CandidatesListPage() {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     if (!jobId) return;
@@ -30,6 +37,7 @@ export function CandidatesListPage() {
       ]);
       setJobTitle(jobRes.data.title);
       setCandidates(candRes.data);
+      setPage(1);
     } catch (err: any) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -37,14 +45,18 @@ export function CandidatesListPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Delete candidate?")) {
-      try {
-        await candidatesApi.delete(id);
-        setCandidates(candidates.filter((c) => c.id !== id));
-      } catch (err: any) {
-        setError(err.message || "Failed to delete");
-      }
+  const handleConfirmDelete = async () => {
+    if (!candidateToDelete) return;
+    setError("");
+    setIsDeleting(true);
+    try {
+      await candidatesApi.delete(candidateToDelete.id);
+      setCandidates(candidates.filter((c) => c.id !== candidateToDelete.id));
+      setCandidateToDelete(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to delete");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -68,6 +80,12 @@ export function CandidatesListPage() {
         ? b.matchScore - a.matchScore
         : a.matchScore - b.matchScore,
     );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / pageSize));
+  const paginatedCandidates = filteredCandidates.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
@@ -138,7 +156,7 @@ export function CandidatesListPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredCandidates.map((candidate) => (
+              {paginatedCandidates.map((candidate) => (
                 <tr key={candidate.id} className="border-b border-gray-700">
                   <td className="px-6 py-4">{candidate.cvFileName}</td>
                   <td className="px-6 py-4">
@@ -163,7 +181,7 @@ export function CandidatesListPage() {
                       View
                     </button>
                     <button
-                      onClick={() => handleDelete(candidate.id)}
+                      onClick={() => setCandidateToDelete(candidate)}
                       className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
                     >
                       Delete
@@ -174,6 +192,42 @@ export function CandidatesListPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && filteredCandidates.length > pageSize && (
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+          >
+            Prev
+          </button>
+          <div className="text-sm text-gray-400">
+            Page {page} / {totalPages}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {candidateToDelete && (
+        <ConfirmModal
+          title="Delete candidate?"
+          message={`This will permanently delete "${candidateToDelete.cvFileName}".`}
+          confirmText="Delete"
+          variant="danger"
+          isLoading={isDeleting}
+          onCancel={() => (isDeleting ? null : setCandidateToDelete(null))}
+          onConfirm={handleConfirmDelete}
+        />
       )}
 
       {showUploadModal && jobId && (

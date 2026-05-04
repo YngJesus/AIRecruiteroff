@@ -41,7 +41,8 @@ export const candidatesApi = {
     apiClient.get<{ id: string; status: Candidate["status"]; processingError?: string }>(
       `/candidates/${id}/status`,
     ),
-  downloadCVUrl: (id: string) => `http://localhost:3000/api/candidates/${id}/cv`,
+  downloadCV: (id: string) =>
+    apiClient.get<Blob>(`/candidates/${id}/cv`, { responseType: "blob" }),
   delete: (id: string) => apiClient.delete(`/candidates/${id}`),
   uploadCV: (jobId: string, file: File) => {
     const formData = new FormData();

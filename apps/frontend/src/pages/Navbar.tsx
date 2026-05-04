@@ -40,6 +40,14 @@ export function Navbar() {
                 Jobs
               </button>
             )}
+            {currentUser?.role === "admin" && (
+              <button
+                onClick={() => navigate("/admin/users")}
+                className={`${isActive("/admin")} hover:text-blue-400`}
+              >
+                Users
+              </button>
+            )}
           </div>
         </div>
 
