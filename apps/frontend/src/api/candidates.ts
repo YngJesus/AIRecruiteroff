@@ -25,4 +25,15 @@ export const candidatesApi = {
   updateStatus: (id: string, status: Candidate["status"]) =>
     apiClient.patch<Candidate>(`/candidates/${id}/status`, { status }),
   delete: (id: string) => apiClient.delete(`/candidates/${id}`),
+  uploadCV: (jobId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient.post<Candidate>(
+      `/candidates/upload?jobId=${jobId}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+  },
 };

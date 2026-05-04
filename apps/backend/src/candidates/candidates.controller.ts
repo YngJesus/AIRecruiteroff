@@ -33,6 +33,7 @@ import { UserRole } from 'src/users/entities/user.entity';
 import { UpdateCandidateStatusDto } from './dto/update-candidate-status.dto';
 import { UploadService } from 'src/upload/upload.service';
 import { ParserService } from './parser.service';
+import { JobsService } from 'src/jobs/jobs.service';
 
 @ApiBearerAuth()
 @ApiTags('Candidates')
@@ -43,6 +44,7 @@ export class CandidatesController {
     private readonly candidatesService: CandidatesService,
     private readonly uploadService: UploadService,
     private readonly parserService: ParserService,
+    private readonly jobsService: JobsService,
   ) {}
   @Post()
   @HttpCode(201)
@@ -109,8 +111,12 @@ export class CandidatesController {
     return this.candidatesService.remove(id);
   }
 
-  @Post('upload/:candidateId')
-  @UseInterceptors(FileInterceptor('file'))
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -122,23 +128,39 @@ export class CandidatesController {
           description: 'PDF or image file',
         },
       },
+      required: ['file'],
     },
   })
-  @ApiOperation({ summary: 'Upload CV file and parse' })
-  @ApiResponse({ status: 201, description: 'CV uploaded and parsed' })
-  @ApiResponse({ status: 400, description: 'Invalid file' })
-  async uploadCV(
-    @Param('candidateId') candidateId: string,
+  @ApiOperation({ summary: 'Upload CV file, create candidate, and parse' })
+  @ApiResponse({ status: 201, description: 'Candidate created' })
+  @ApiResponse({ status: 400, description: 'Invalid file or jobId' })
+  @ApiResponse({ status: 413, description: 'File too large' })
+  async uploadCVAndCreateCandidate(
+    @Query('jobId') jobId: string,
     @UploadedFile() file: any,
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
+    if (!jobId) {
+      throw new BadRequestException('jobId query param required');
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException('File too large (max 10MB)');
+    }
+
+    // Validate job exists
+    try {
+      // Assuming you have access to JobsService - add to constructor
+      await this.jobsService.findOne(jobId);
+    } catch (err) {
+      throw new BadRequestException('Job not found');
+    }
 
     // Save file
     const filepath = await this.uploadService.handleFileUpload(file);
 
-    // Extract text based on file type
+    // Extract text
     let rawText = '';
     if (file.mimetype === 'application/pdf') {
       rawText = await this.uploadService.extractTextFromPDF(filepath);
@@ -149,9 +171,16 @@ export class CandidatesController {
     // Parse CV
     const parsedData = this.parserService.parseCV(rawText);
 
-    // Update candidate
+    // Create candidate
+    const candidate = await this.candidatesService.create({
+      jobId,
+      cvFileName: file.originalname,
+      cvFilePath: filepath,
+    } as any);
+
+    // Update with parsed data
     const updated = await this.candidatesService.updateParsedData(
-      candidateId,
+      candidate.id,
       parsedData,
     );
 
