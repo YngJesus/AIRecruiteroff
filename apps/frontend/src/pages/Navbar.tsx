@@ -12,38 +12,44 @@ export function Navbar() {
   };
 
   const isActive = (path: string) =>
-    location.pathname.startsWith(path) ? "text-blue-400" : "text-gray-300";
+    location.pathname.startsWith(path)
+      ? "text-white bg-slate-800/90 ring-1 ring-slate-600/80"
+      : "text-slate-400 hover:text-white hover:bg-slate-800/50";
 
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 p-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-8">
-          <h1
+    <nav className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center gap-6">
+          <button
+            type="button"
             onClick={() => navigate("/dashboard")}
-            className="text-2xl font-bold text-white cursor-pointer hover:text-blue-400"
+            className="text-left text-xl font-bold tracking-tight text-white transition hover:text-blue-300"
           >
             AIRecruiter
-          </h1>
-          <div className="flex space-x-6">
+          </button>
+          <div className="flex flex-wrap items-center gap-1">
             <button
+              type="button"
               onClick={() => navigate("/dashboard")}
-              className={`${isActive("/dashboard")} hover:text-blue-400`}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${isActive("/dashboard")}`}
             >
               Dashboard
             </button>
             {(currentUser?.role === "recruiter" ||
               currentUser?.role === "admin") && (
               <button
+                type="button"
                 onClick={() => navigate("/jobs")}
-                className={`${isActive("/jobs")} hover:text-blue-400`}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${isActive("/jobs")}`}
               >
                 Jobs
               </button>
             )}
             {currentUser?.role === "admin" && (
               <button
+                type="button"
                 onClick={() => navigate("/admin/users")}
-                className={`${isActive("/admin")} hover:text-blue-400`}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${isActive("/admin")}`}
               >
                 Users
               </button>
@@ -51,15 +57,21 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <span className="text-gray-300">
-            {currentUser?.firstName} {currentUser?.lastName}
+        <div className="flex items-center gap-3">
+          <span className="hidden text-sm text-slate-400 sm:inline">
+            <span className="font-medium text-slate-200">
+              {currentUser?.firstName} {currentUser?.lastName}
+            </span>
+            <span className="ml-2 rounded-md bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+              {currentUser?.role}
+            </span>
           </span>
           <button
+            type="button"
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+            className="rounded-lg bg-rose-600/90 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-500"
           >
-            Logout
+            Log out
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { usersApi, type AdminUser, type UserRole } from "../../api/users";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { PageShell, fieldClass } from "../../components/layout/PageShell";
 
 const roleLabel: Record<UserRole, string> = {
   admin: "Admin",
@@ -42,14 +43,15 @@ export function UsersManagementPage() {
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) => {
-      const hay = `${u.email} ${u.firstName} ${u.lastName} ${u.role}`.toLowerCase();
+      const hay =
+        `${u.email} ${u.firstName} ${u.lastName} ${u.role}`.toLowerCase();
       return hay.includes(q);
     });
   }, [users, search]);
@@ -106,72 +108,86 @@ export function UsersManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="flex items-center justify-between mb-6">
+    <PageShell>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Users</h1>
-          <p className="text-gray-400">Admin-only user management</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/90">
+            Administration
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-white">Users</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Create accounts, assign roles, and remove access.
+          </p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreate(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/25 transition hover:from-blue-500 hover:to-indigo-500"
         >
-          + New User
+          + New user
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">{error}</div>
+        <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
+          {error}
+        </div>
       )}
 
       <div className="mb-4">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email, role..."
-          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+          placeholder="Search by name, email, role…"
+          className={fieldClass}
         />
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-400">Loading users...</div>
+        <div className="flex items-center gap-3 py-16 text-slate-400">
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          Loading users…
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-gray-400 py-12">No users found</div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 py-16 text-center text-slate-400">
+          No users found
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-gray-300">
-            <thead className="bg-gray-800">
+        <div className="overflow-hidden rounded-2xl border border-slate-800/80">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="border-b border-slate-800 bg-slate-900/80">
               <tr>
-                <th className="px-6 py-3">Name</th>
-                <th className="px-6 py-3">Email</th>
-                <th className="px-6 py-3">Role</th>
-                <th className="px-6 py-3">Actions</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Name</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Email</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Role</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-800/80 bg-slate-900/30">
               {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-gray-700">
-                  <td className="px-6 py-4">
+                <tr key={u.id} className="hover:bg-slate-800/40">
+                  <td className="px-5 py-3.5 font-medium text-white">
                     {u.firstName} {u.lastName}
                   </td>
-                  <td className="px-6 py-4">{u.email}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-3.5 text-slate-400">{u.email}</td>
+                  <td className="px-5 py-3.5">
                     <select
                       value={u.role}
                       onChange={(e) =>
                         handleUpdateRole(u, e.target.value as UserRole)
                       }
-                      className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                      className={fieldClass}
                     >
                       <option value="recruiter">{roleLabel.recruiter}</option>
                       <option value="tech_lead">{roleLabel.tech_lead}</option>
                       <option value="admin">{roleLabel.admin}</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-3.5">
                     <button
+                      type="button"
                       onClick={() => setUserToDelete(u)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                      className="rounded-lg bg-rose-600/90 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
                     >
                       Delete
                     </button>
@@ -184,17 +200,20 @@ export function UsersManagementPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-700">
-            <h2 className="text-xl font-semibold text-white mb-4">New user</h2>
-            <form onSubmit={handleCreate} className="space-y-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700/80 bg-slate-900/95 p-6 shadow-2xl">
+            <h2 className="text-xl font-semibold text-white">New user</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Creates a full account (same as API registration flow).
+            </p>
+            <form onSubmit={handleCreate} className="mt-5 space-y-3">
               <input
                 value={createForm.email}
                 onChange={(e) =>
                   setCreateForm((p) => ({ ...p, email: e.target.value }))
                 }
                 placeholder="Email"
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                className={fieldClass}
               />
               <input
                 value={createForm.password}
@@ -203,7 +222,7 @@ export function UsersManagementPage() {
                 }
                 placeholder="Password (min 6 chars)"
                 type="password"
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                className={fieldClass}
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -212,7 +231,7 @@ export function UsersManagementPage() {
                     setCreateForm((p) => ({ ...p, firstName: e.target.value }))
                   }
                   placeholder="First name"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                  className={fieldClass}
                 />
                 <input
                   value={createForm.lastName}
@@ -220,36 +239,39 @@ export function UsersManagementPage() {
                     setCreateForm((p) => ({ ...p, lastName: e.target.value }))
                   }
                   placeholder="Last name"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                  className={fieldClass}
                 />
               </div>
               <select
                 value={createForm.role}
                 onChange={(e) =>
-                  setCreateForm((p) => ({ ...p, role: e.target.value as UserRole }))
+                  setCreateForm((p) => ({
+                    ...p,
+                    role: e.target.value as UserRole,
+                  }))
                 }
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-gray-200"
+                className={fieldClass}
               >
                 <option value="recruiter">{roleLabel.recruiter}</option>
                 <option value="tech_lead">{roleLabel.tech_lead}</option>
                 <option value="admin">{roleLabel.admin}</option>
               </select>
 
-              <div className="flex gap-3 pt-2 justify-end">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => (isCreating ? null : setShowCreate(false))}
                   disabled={isCreating}
-                  className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700 text-white font-semibold"
+                  className="rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2 text-sm font-semibold text-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {isCreating ? "Creating..." : "Create"}
+                  {isCreating ? "Creating…" : "Create"}
                 </button>
               </div>
             </form>
@@ -268,7 +290,6 @@ export function UsersManagementPage() {
           onConfirm={handleConfirmDelete}
         />
       )}
-    </div>
+    </PageShell>
   );
 }
-

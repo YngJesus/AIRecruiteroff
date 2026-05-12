@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import {
+  AuthShell,
+  fieldClass,
+  labelClass,
+} from "../../components/layout/PageShell";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -26,41 +31,40 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-white mb-6">AIRecruiter</h1>
-        <h2 className="text-xl font-semibold text-white mb-6">Login</h2>
+    <AuthShell>
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur-md">
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
+          AIRecruiter
+        </p>
+        <h1 className="mt-2 text-2xl font-bold text-white">Welcome back</h1>
+        <p className="mt-1 text-sm text-slate-400">Sign in to your account</p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">
+          <div className="mt-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-sm text-rose-200">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Email
-            </label>
+            <label className={labelClass}>Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="your@email.com"
+              className={fieldClass}
+              placeholder="you@company.com"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
+            <label className={labelClass}>Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className={fieldClass}
               placeholder="••••••••"
               required
             />
@@ -69,19 +73,22 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 rounded transition"
+            className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="text-center text-gray-400 mt-6">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-blue-400 hover:text-blue-300">
-            Register here
+        <p className="mt-6 text-center text-sm text-slate-400">
+          No account?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-blue-400 hover:text-blue-300"
+          >
+            Register
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

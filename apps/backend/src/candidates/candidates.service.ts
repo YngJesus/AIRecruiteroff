@@ -67,7 +67,7 @@ export class CandidatesService {
     const candidate = await this.findOne(id);
     candidate.matchScore = matchScore;
     candidate.skillGaps = skillGaps;
-    candidate.status = CandidateStatus.MATCHED;
+    /** Stay `parsed` until interview questions are persisted — avoids UI showing `matched` without questions. */
     return this.candidatesRepository.save(candidate);
   }
 
@@ -81,6 +81,7 @@ export class CandidatesService {
   async updateGeneratedQuestions(id: string, questions: any[]): Promise<Candidate> {
     const candidate = await this.findOne(id);
     candidate.generatedQuestions = questions;
+    candidate.status = CandidateStatus.MATCHED;
     return this.candidatesRepository.save(candidate);
   }
 

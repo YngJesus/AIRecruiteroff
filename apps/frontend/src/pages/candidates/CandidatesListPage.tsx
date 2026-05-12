@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { candidatesApi, type Candidate } from "../../api/candidates";
 import { jobsApi } from "../../api/jobs";
 import { CVUploadModal } from "../../components/CVUploadModal";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { PageShell, fieldClass } from "../../components/layout/PageShell";
+
+const ACTIVE_STATUSES = new Set(["uploaded", "processing", "parsed"]);
 
 export function CandidatesListPage() {
   const { jobId } = useParams();
@@ -23,27 +26,42 @@ export function CandidatesListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const fetchData = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!jobId) return;
+      try {
+        if (!opts?.silent) setIsLoading(true);
+        const [jobRes, candRes] = await Promise.all([
+          jobsApi.getById(jobId),
+          candidatesApi.getAll(jobId),
+        ]);
+        setJobTitle(jobRes.data.title);
+        setCandidates(candRes.data);
+        if (!opts?.silent) setPage(1);
+      } catch (err: any) {
+        setError(err.message || "Failed to load data");
+      } finally {
+        if (!opts?.silent) setIsLoading(false);
+      }
+    },
+    [jobId],
+  );
+
   useEffect(() => {
     if (!jobId) return;
-    fetchData();
-  }, [jobId]);
+    void fetchData();
+  }, [jobId, fetchData]);
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const [jobRes, candRes] = await Promise.all([
-        jobsApi.getById(jobId!),
-        candidatesApi.getAll(jobId),
-      ]);
-      setJobTitle(jobRes.data.title);
-      setCandidates(candRes.data);
-      setPage(1);
-    } catch (err: any) {
-      setError(err.message || "Failed to load data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const pipelineActive = useMemo(
+    () => candidates.some((c) => ACTIVE_STATUSES.has(c.status)),
+    [candidates],
+  );
+
+  useEffect(() => {
+    if (!jobId || !pipelineActive) return;
+    const t = setInterval(() => void fetchData({ silent: true }), 4000);
+    return () => clearInterval(t);
+  }, [jobId, pipelineActive, fetchData]);
 
   const handleConfirmDelete = async () => {
     if (!candidateToDelete) return;
@@ -62,9 +80,12 @@ export function CandidatesListPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6 text-center text-gray-400">
-        Loading...
-      </div>
+      <PageShell>
+        <div className="flex items-center gap-3 py-20 text-slate-400">
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          Loading…
+        </div>
+      </PageShell>
     );
   }
 
@@ -81,43 +102,55 @@ export function CandidatesListPage() {
         : a.matchScore - b.matchScore,
     );
 
-  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCandidates.length / pageSize),
+  );
   const paginatedCandidates = filteredCandidates.slice(
     (page - 1) * pageSize,
     page * pageSize,
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <PageShell>
       <button
+        type="button"
         onClick={() => navigate("/jobs")}
-        className="text-blue-400 hover:text-blue-300 mb-6"
+        className="mb-6 text-sm font-medium text-blue-400 hover:text-blue-300"
       >
-        ← Back to Jobs
+        ← Back to jobs
       </button>
 
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold text-white">{jobTitle}</h1>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/90">
+            Applicants
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-white">{jobTitle}</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            List refreshes while CVs are processing.
+          </p>
+        </div>
         <button
+          type="button"
           onClick={() => setShowUploadModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/25 transition hover:from-blue-500 hover:to-indigo-500"
         >
           + Upload CV
         </button>
       </div>
-      <h2 className="text-lg text-gray-300 mb-8">Candidates</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by filename..."
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+          placeholder="Search by filename…"
+          className={fieldClass}
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+          className={fieldClass}
         >
           <option value="all">All statuses</option>
           <option value="uploaded">Uploaded</option>
@@ -131,7 +164,7 @@ export function CandidatesListPage() {
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200"
+          className={fieldClass}
         >
           <option value="desc">Score: high to low</option>
           <option value="asc">Score: low to high</option>
@@ -139,50 +172,64 @@ export function CandidatesListPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">{error}</div>
+        <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
+          {error}
+        </div>
       )}
 
       {filteredCandidates.length === 0 ? (
-        <div className="text-center text-gray-400 py-12">No candidates yet</div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 py-16 text-center text-slate-400">
+          No candidates yet
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-gray-300">
-            <thead className="bg-gray-800">
+        <div className="overflow-hidden rounded-2xl border border-slate-800/80">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="border-b border-slate-800 bg-slate-900/80">
               <tr>
-                <th className="px-6 py-3">File Name</th>
-                <th className="px-6 py-3">Match Score</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Actions</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">
+                  File name
+                </th>
+                <th className="px-5 py-3 font-semibold text-slate-400">
+                  Match
+                </th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Status</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-800/80 bg-slate-900/30">
               {paginatedCandidates.map((candidate) => (
-                <tr key={candidate.id} className="border-b border-gray-700">
-                  <td className="px-6 py-4">{candidate.cvFileName}</td>
-                  <td className="px-6 py-4">
+                <tr key={candidate.id} className="hover:bg-slate-800/40">
+                  <td className="px-5 py-3.5 font-medium text-white">
+                    {candidate.cvFileName}
+                  </td>
+                  <td className="px-5 py-3.5">
                     <span
-                      className={`px-2 py-1 rounded text-sm font-semibold ${
+                      className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold tabular-nums ${
                         candidate.matchScore >= 70
-                          ? "bg-green-900 text-green-200"
+                          ? "bg-emerald-950/80 text-emerald-200 ring-1 ring-emerald-800/40"
                           : candidate.matchScore >= 40
-                            ? "bg-yellow-900 text-yellow-200"
-                            : "bg-red-900 text-red-200"
+                            ? "bg-amber-950/80 text-amber-200 ring-1 ring-amber-800/40"
+                            : "bg-rose-950/80 text-rose-200 ring-1 ring-rose-800/40"
                       }`}
                     >
                       {candidate.matchScore.toFixed(0)}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 capitalize">{candidate.status}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-3.5 capitalize text-slate-400">
+                    {candidate.status.replace(/-/g, " ")}
+                  </td>
+                  <td className="px-5 py-3.5">
                     <button
+                      type="button"
                       onClick={() => navigate(`/candidates/${candidate.id}`)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded mr-2"
+                      className="mr-2 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
                     >
                       View
                     </button>
                     <button
+                      type="button"
                       onClick={() => setCandidateToDelete(candidate)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                      className="rounded-lg bg-rose-600/90 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
                     >
                       Delete
                     </button>
@@ -195,23 +242,23 @@ export function CandidatesListPage() {
       )}
 
       {!isLoading && filteredCandidates.length > pageSize && (
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-8 flex items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+            className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
           >
             Prev
           </button>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-slate-400">
             Page {page} / {totalPages}
           </div>
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+            className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-40"
           >
             Next
           </button>
@@ -238,10 +285,10 @@ export function CandidatesListPage() {
           }
           onClose={() => {
             setShowUploadModal(false);
-            fetchData();
+            void fetchData({ silent: true });
           }}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

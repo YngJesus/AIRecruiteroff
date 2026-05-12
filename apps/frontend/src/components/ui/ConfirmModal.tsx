@@ -31,28 +31,28 @@ export function ConfirmModal({
 
   const confirmClasses =
     variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 disabled:bg-gray-600"
-      : "bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600";
+      ? "bg-rose-600 hover:bg-rose-500 disabled:bg-slate-600"
+      : "bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600";
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-gray-800 rounded-lg max-w-md w-full border border-gray-700 shadow-xl">
-        <div className="p-5 border-b border-gray-700">
+      <div className="w-full max-w-md rounded-2xl border border-slate-700/80 bg-slate-900/95 shadow-2xl shadow-black/50">
+        <div className="border-b border-slate-800 p-5">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
         </div>
         <div className="p-5">
-          <p className="text-gray-300">{message}</p>
+          <p className="text-sm leading-relaxed text-slate-300">{message}</p>
         </div>
-        <div className="p-5 pt-0 flex gap-3 justify-end">
+        <div className="flex justify-end gap-3 p-5 pt-0">
           <button
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700 text-white font-semibold"
+            className="rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 disabled:opacity-50"
           >
             {cancelText}
           </button>
@@ -60,9 +60,9 @@ export function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 rounded text-white font-semibold ${confirmClasses}`}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 ${confirmClasses}`}
           >
-            {isLoading ? "Working..." : confirmText}
+            {isLoading ? "Working…" : confirmText}
           </button>
         </div>
       </div>

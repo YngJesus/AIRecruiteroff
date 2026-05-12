@@ -1,12 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jobsApi } from "../../api/jobs";
+import {
+  PageShell,
+  fieldClass,
+  labelClass,
+} from "../../components/layout/PageShell";
 
 interface Skill {
   skill: string;
   level: "junior" | "mid" | "senior";
   priority: "required" | "nice-to-have";
 }
+
+const selectClass = `${fieldClass} py-2`;
 
 export function JobCreatePage() {
   const [title, setTitle] = useState("");
@@ -66,123 +73,120 @@ export function JobCreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Create New Job</h1>
+    <PageShell maxWidthClass="max-w-2xl">
+      <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
+        New posting
+      </p>
+      <h1 className="mt-1 text-3xl font-bold text-white">Create job</h1>
+      <p className="mt-1 text-sm text-slate-400">
+        Define title, description, and weighted skills for matching.
+      </p>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mt-6 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
+          {error}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Job Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="e.g., Senior React Developer"
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <div>
+          <label className={labelClass}>Job title *</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={fieldClass}
+            placeholder="e.g. Senior React Developer"
+          />
+        </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="Job description..."
-              rows={4}
-            />
-          </div>
+        <div>
+          <label className={labelClass}>Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={`${fieldClass} min-h-[120px] resize-y`}
+            placeholder="Role summary, team, stack…"
+            rows={4}
+          />
+        </div>
 
-          {/* Skills */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Required Skills *
-            </label>
-            <div className="space-y-3">
-              {skills.map((skill, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={skill.skill}
-                    onChange={(e) =>
-                      handleSkillChange(idx, "skill", e.target.value)
-                    }
-                    className="flex-1 px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                    placeholder="Skill name"
-                  />
-                  <select
-                    value={skill.level}
-                    onChange={(e) =>
-                      handleSkillChange(idx, "level", e.target.value as any)
-                    }
-                    className="px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+        <div>
+          <label className={labelClass}>Skills *</label>
+          <div className="space-y-3">
+            {skills.map((skill, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col gap-2 rounded-xl border border-slate-800/80 bg-slate-900/40 p-3 sm:flex-row sm:flex-wrap"
+              >
+                <input
+                  type="text"
+                  value={skill.skill}
+                  onChange={(e) =>
+                    handleSkillChange(idx, "skill", e.target.value)
+                  }
+                  className={`${fieldClass} sm:min-w-[140px] sm:flex-1`}
+                  placeholder="Skill name"
+                />
+                <select
+                  value={skill.level}
+                  onChange={(e) =>
+                    handleSkillChange(idx, "level", e.target.value as any)
+                  }
+                  className={selectClass}
+                >
+                  <option value="junior">Junior</option>
+                  <option value="mid">Mid</option>
+                  <option value="senior">Senior</option>
+                </select>
+                <select
+                  value={skill.priority}
+                  onChange={(e) =>
+                    handleSkillChange(idx, "priority", e.target.value as any)
+                  }
+                  className={selectClass}
+                >
+                  <option value="required">Required</option>
+                  <option value="nice-to-have">Nice-to-have</option>
+                </select>
+                {skills.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill(idx)}
+                    className="rounded-xl bg-rose-600/90 px-3 py-2 text-sm font-semibold text-white sm:self-stretch"
                   >
-                    <option value="junior">Junior</option>
-                    <option value="mid">Mid</option>
-                    <option value="senior">Senior</option>
-                  </select>
-                  <select
-                    value={skill.priority}
-                    onChange={(e) =>
-                      handleSkillChange(idx, "priority", e.target.value as any)
-                    }
-                    className="px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="required">Required</option>
-                    <option value="nice-to-have">Nice-to-have</option>
-                  </select>
-                  {skills.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(idx)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={handleAddSkill}
-              className="mt-2 text-blue-400 hover:text-blue-300"
-            >
-              + Add Skill
-            </button>
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={handleAddSkill}
+            className="mt-3 text-sm font-medium text-blue-400 hover:text-blue-300"
+          >
+            + Add skill
+          </button>
+        </div>
 
-          {/* Buttons */}
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 rounded"
-            >
-              {isLoading ? "Creating..." : "Create Job"}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/jobs")}
-              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/25 transition hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50"
+          >
+            {isLoading ? "Creating…" : "Create job"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/jobs")}
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-800/60 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </PageShell>
   );
 }

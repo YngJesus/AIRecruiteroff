@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import {
+  AuthShell,
+  fieldClass,
+  labelClass,
+} from "../../components/layout/PageShell";
 
 export function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -44,109 +49,108 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-white mb-6">AIRecruiter</h1>
-        <h2 className="text-xl font-semibold text-white mb-6">Register</h2>
+    <AuthShell>
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur-md">
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
+          AIRecruiter
+        </p>
+        <h1 className="mt-2 text-2xl font-bold text-white">Create account</h1>
+        <p className="mt-1 text-sm text-slate-400">
+          Recruiter or tech lead — admins are invited separately.
+        </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">
+          <div className="mt-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-sm text-rose-200">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Email
-            </label>
+            <label className={labelClass}>Email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="your@email.com"
+              className={fieldClass}
+              placeholder="you@company.com"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              First Name
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="John"
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>First name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className={fieldClass}
+                placeholder="Jane"
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Last name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className={fieldClass}
+                placeholder="Doe"
+                required
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Last Name
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="Doe"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
+            <label className={labelClass}>Password</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              placeholder="At least 8 chars, 1 uppercase, 1 number, 1 special char"
+              className={fieldClass}
+              placeholder="Strong password"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Role
-            </label>
+            <label className={labelClass}>Role</label>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className={fieldClass}
             >
               <option value="recruiter">Recruiter</option>
-              <option value="tech_lead">Tech Lead</option>
+              <option value="tech_lead">Tech lead</option>
             </select>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 rounded transition"
+            className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50"
           >
-            {isLoading ? "Registering..." : "Register"}
+            {isLoading ? "Creating account…" : "Register"}
           </button>
         </form>
 
-        <p className="text-center text-gray-400 mt-6">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-400 hover:text-blue-300">
-            Login here
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Already registered?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-blue-400 hover:text-blue-300"
+          >
+            Sign in
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

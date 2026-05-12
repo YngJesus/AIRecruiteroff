@@ -15,7 +15,10 @@ export class DashboardService {
     private readonly candidatesRepository: Repository<Candidate>,
   ) {}
 
-  async getSummary(user: { id: string; role: UserRole }): Promise<DashboardSummary> {
+  async getSummary(user: {
+    id: string;
+    role: UserRole;
+  }): Promise<DashboardSummary> {
     const isAdmin = user?.role === UserRole.ADMIN;
 
     const jobs = await this.jobsRepository.find({
@@ -26,20 +29,32 @@ export class DashboardService {
     const jobIds = jobs.map((j) => j.id);
     const jobTitleById = new Map(jobs.map((j) => [j.id, j.title]));
 
-    const candidatesWhere = isAdmin
-      ? undefined
-      : jobIds.length
-        ? ({ jobId: jobIds } as any)
-        : ({ jobId: '__none__' } as any);
+    // Early return if non-admin with no jobs
+    if (!isAdmin && jobIds.length === 0) {
+      return {
+        totalJobs: 0,
+        totalCandidates: 0,
+        avgMatchScore: 0,
+        highMatchCandidates: 0,
+        pipelineInProgress: 0,
+        needsAttention: 0,
+        interviewReady: 0,
+        candidatesByStatus: {},
+        recentJobs: [],
+        recentCandidates: [],
+      };
+    }
+
+    const candidatesWhere = isAdmin ? undefined : ({ jobId: jobIds } as any);
 
     const [totalJobs, totalCandidates, candidates, recentCandidates] =
       await Promise.all([
         isAdmin ? this.jobsRepository.count() : jobs.length,
         isAdmin
           ? this.candidatesRepository.count()
-          : jobIds.length
-            ? this.candidatesRepository.count({ where: { jobId: jobIds } as any })
-            : 0,
+          : this.candidatesRepository.count({
+              where: { jobId: jobIds } as any,
+            }),
         this.candidatesRepository.find({
           where: candidatesWhere as any,
           select: { id: true, status: true, matchScore: true } as any,

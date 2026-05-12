@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { candidatesApi, type Candidate } from "../../api/candidates";
 import { useAuth } from "../../context/AuthContext";
@@ -15,37 +15,61 @@ export function CandidateDetailPage() {
     useState<Candidate["status"]>("uploaded");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  const fetchCandidate = useCallback(
+    async (showLoading = true) => {
+      if (!candidateId) return;
+      try {
+        if (showLoading) setIsLoading(true);
+        const response = await candidatesApi.getById(candidateId);
+        setCandidate(response.data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load candidate");
+      } finally {
+        if (showLoading) setIsLoading(false);
+      }
+    },
+    [candidateId],
+  );
+
   useEffect(() => {
     if (!candidateId) return;
-    fetchCandidate();
-  }, [candidateId]);
+    void fetchCandidate();
+  }, [candidateId, fetchCandidate]);
 
   useEffect(() => {
     if (!candidate) return;
     setSelectedStatus(candidate.status);
   }, [candidate?.id, candidate?.status]);
 
+  /** Poll until pipeline finishes, including `parsed` (match done, questions generating) and legacy `matched` without questions. */
   useEffect(() => {
-    if (!candidateId || !candidate) return;
-    if (!["uploaded", "processing"].includes(candidate.status)) return;
+    if (!candidateId) return;
+
+    const shouldPoll = (c: Candidate | null) => {
+      if (!c) return true;
+      if (["uploaded", "processing", "parsed"].includes(c.status)) return true;
+      if (
+        c.status === "matched" &&
+        (!Array.isArray(c.generatedQuestions) ||
+          c.generatedQuestions.length === 0)
+      ) {
+        return true;
+      }
+      return false;
+    };
+
+    if (!shouldPoll(candidate)) return;
 
     const timer = setInterval(() => {
-      fetchCandidate(false);
-    }, 3000);
+      void fetchCandidate(false);
+    }, 2500);
     return () => clearInterval(timer);
-  }, [candidateId, candidate?.status]);
-
-  const fetchCandidate = async (showLoading = true) => {
-    try {
-      if (showLoading) setIsLoading(true);
-      const response = await candidatesApi.getById(candidateId!);
-      setCandidate(response.data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load candidate");
-    } finally {
-      if (showLoading) setIsLoading(false);
-    }
-  };
+  }, [
+    candidateId,
+    candidate?.status,
+    candidate?.generatedQuestions?.length,
+    fetchCandidate,
+  ]);
 
   const handleDownloadCv = async () => {
     if (!candidate) return;
@@ -218,10 +242,18 @@ export function CandidateDetailPage() {
 
       {["uploaded", "processing"].includes(candidate.status) && (
         <div className="mb-6 rounded-xl border border-blue-700/50 bg-blue-950/40 p-4 text-sm text-blue-200">
-          Candidate analysis is in progress. This page refreshes automatically
-          every 3 seconds.
+          CV analysis is running. This page refreshes automatically while
+          processing.
         </div>
       )}
+      {candidate.status === "parsed" &&
+        (!candidate.generatedQuestions ||
+          candidate.generatedQuestions.length === 0) && (
+          <div className="mb-6 rounded-xl border border-violet-700/50 bg-violet-950/40 p-4 text-sm text-violet-200">
+            Match score is ready. Generating interview questions — updates
+            appear here automatically (no refresh needed).
+          </div>
+        )}
 
       {/* Parsed Data */}
       {candidate.parsedData && (

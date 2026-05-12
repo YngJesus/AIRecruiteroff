@@ -18,8 +18,8 @@ export class JobResponseDto {
   })
   requiredSkills: any[];
 
-  @ApiProperty()
-  createdById: string;
+  @ApiProperty({ nullable: true })
+  createdById: string | null;
 
   @ApiProperty()
   createdAt: Date;

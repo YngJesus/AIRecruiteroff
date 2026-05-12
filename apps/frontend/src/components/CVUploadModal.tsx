@@ -88,12 +88,15 @@ export function CVUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-4">Upload CV</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-slate-700/80 bg-slate-900/95 p-8 shadow-2xl shadow-black/50">
+        <h2 className="mb-1 text-2xl font-bold text-white">Upload CV</h2>
+        <p className="mb-4 text-sm text-slate-400">
+          PDF or image — queued for AI parsing and matching.
+        </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">
+          <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-sm text-rose-200">
             {error}
           </div>
         )}
@@ -103,10 +106,10 @@ export function CVUploadModal({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
+          className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
             dragActive
-              ? "border-blue-400 bg-blue-900 bg-opacity-20"
-              : "border-gray-600 bg-gray-900"
+              ? "border-blue-400 bg-blue-950/40 ring-1 ring-blue-500/30"
+              : "border-slate-600 bg-slate-950/60"
           }`}
         >
           <input
@@ -119,36 +122,38 @@ export function CVUploadModal({
           <label htmlFor="file-input" className="cursor-pointer">
             {file ? (
               <div>
-                <p className="text-green-400 font-semibold">{file.name}</p>
-                <p className="text-gray-400 text-sm">
+                <p className="font-semibold text-emerald-400">{file.name}</p>
+                <p className="text-sm text-slate-400">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-gray-300 font-semibold">
+                <p className="font-semibold text-slate-200">
                   Drag and drop your CV here
                 </p>
-                <p className="text-gray-400 text-sm">or click to select</p>
-                <p className="text-gray-500 text-xs mt-2">
-                  Supported: PDF, JPG, PNG (Max 10MB)
+                <p className="text-sm text-slate-400">or click to select</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  PDF, JPG, PNG — max 10MB
                 </p>
               </div>
             )}
           </label>
         </div>
 
-        <div className="flex gap-4 mt-6">
+        <div className="mt-6 flex gap-3">
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!file || isLoading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 rounded"
+            className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/25 transition hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40"
           >
-            {isLoading ? "Uploading..." : "Upload"}
+            {isLoading ? "Uploading…" : "Upload"}
           </button>
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded"
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-800/80 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
           >
             Cancel
           </button>

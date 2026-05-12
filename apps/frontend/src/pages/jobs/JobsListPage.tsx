@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { jobsApi } from "../../api/jobs";
 import type { Job } from "../../api/jobs";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { PageShell } from "../../components/layout/PageShell";
 
 export function JobsListPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -50,72 +51,94 @@ export function JobsListPage() {
   const paginatedJobs = jobs.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Job Offers</h1>
+    <PageShell>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
+            Open roles
+          </p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+            Job offers
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Manage postings, skills, and applicants in one place.
+          </p>
+        </div>
         <button
+          type="button"
           onClick={() => navigate("/jobs/new")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+          className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-500 hover:to-indigo-500"
         >
-          + New Job
+          + New job
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900 text-red-200 rounded">{error}</div>
+        <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
+          {error}
+        </div>
       )}
 
       {isLoading ? (
-        <div className="text-center text-gray-400">Loading jobs...</div>
+        <div className="flex items-center gap-3 py-16 text-slate-400">
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          Loading jobs…
+        </div>
       ) : jobs.length === 0 ? (
-        <div className="text-center text-gray-400 py-12">
-          No jobs yet. Create your first job offer!
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 py-16 text-center text-slate-400">
+          No jobs yet. Create your first job offer.
         </div>
       ) : (
         <div className="grid gap-4">
           {paginatedJobs.map((job) => (
-            <div key={job.id} className="bg-gray-800 rounded-lg p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-white">
-                    {job.title}
-                  </h2>
-                  <p className="text-gray-400 mt-2">{job.description}</p>
+            <div
+              key={job.id}
+              className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-6 shadow-lg shadow-black/10 transition hover:border-slate-700"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:gap-6">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-semibold text-white">{job.title}</h2>
+                  <p className="mt-2 line-clamp-2 text-sm text-slate-400">
+                    {job.description || "No description"}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {job.requiredSkills.map((skill, idx) => (
                       <span
                         key={idx}
-                        className={`px-2 py-1 rounded text-sm ${
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium ${
                           skill.priority === "required"
-                            ? "bg-blue-900 text-blue-200"
-                            : "bg-gray-700 text-gray-200"
+                            ? "bg-blue-950/80 text-blue-200 ring-1 ring-blue-800/50"
+                            : "bg-slate-800 text-slate-300 ring-1 ring-slate-700"
                         }`}
                       >
                         {skill.skill} ({skill.level})
-                        {skill.priority === "required" ? " • Required" : " • Nice"}
+                        {skill.priority === "required" ? " · Req" : " · Nice"}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
                   <button
+                    type="button"
                     onClick={() => navigate(`/jobs/${job.id}/candidates`)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+                    className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500"
                   >
-                    Candidates{typeof job.candidateCount === "number"
+                    Candidates
+                    {typeof job.candidateCount === "number"
                       ? ` (${job.candidateCount})`
                       : ""}
                   </button>
                   <button
+                    type="button"
                     onClick={() => navigate(`/jobs/${job.id}/edit`)}
-                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                    className="rounded-xl border border-slate-600 bg-slate-800/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
                   >
                     Edit
                   </button>
                   <button
+                    type="button"
                     onClick={() => setJobToDelete(job)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                    className="rounded-xl bg-rose-600/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500"
                   >
                     Delete
                   </button>
@@ -127,23 +150,23 @@ export function JobsListPage() {
       )}
 
       {!isLoading && jobs.length > pageSize && (
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-8 flex items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+            className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-800 disabled:opacity-40"
           >
             Prev
           </button>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-slate-400">
             Page {page} / {totalPages}
           </div>
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-200 disabled:text-gray-500"
+            className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm text-slate-200 transition hover:bg-slate-800 disabled:opacity-40"
           >
             Next
           </button>
@@ -161,6 +184,6 @@ export function JobsListPage() {
           onConfirm={handleConfirmDelete}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

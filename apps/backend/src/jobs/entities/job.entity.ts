@@ -29,12 +29,12 @@ export class Job {
   @Column({ type: 'jsonb', default: [] })
   requiredSkills: RequiredSkill[];
 
-  @Column()
-  createdById: string;
+  @Column({ nullable: true })
+  createdById: string | null;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'createdById' })
-  createdBy: User;
+  createdBy: User | null;
 
   @CreateDateColumn()
   createdAt: Date;
