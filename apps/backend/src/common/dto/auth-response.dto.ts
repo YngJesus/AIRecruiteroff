@@ -16,6 +16,9 @@ export class UserResponseDto {
   @ApiProperty()
   role: string;
 
+  @ApiProperty({ required: false })
+  departmentId?: string;
+
   @ApiProperty()
   createdAt: Date;
 }

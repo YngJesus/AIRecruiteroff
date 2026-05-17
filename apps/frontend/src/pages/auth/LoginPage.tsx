@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   AuthShell,
@@ -80,13 +80,7 @@ export function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-400">
-          No account?{" "}
-          <Link
-            to="/register"
-            className="font-medium text-blue-400 hover:text-blue-300"
-          >
-            Register
-          </Link>
+          If you need an account, please contact your administrator.
         </p>
       </div>
     </AuthShell>

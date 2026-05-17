@@ -34,6 +34,7 @@ export class UsersService {
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
       role: createUserDto.role,
+      departmentId: createUserDto.departmentId,
     });
     return this.usersRepository.save(user);
   }

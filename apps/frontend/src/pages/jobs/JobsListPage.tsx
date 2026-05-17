@@ -4,6 +4,7 @@ import { jobsApi } from "../../api/jobs";
 import type { Job } from "../../api/jobs";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { PageShell } from "../../components/layout/PageShell";
+import { PageHeader } from "../../components/ui/PageHeader";
 
 export function JobsListPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -22,7 +23,7 @@ export function JobsListPage() {
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
-      const response = await jobsApi.getAll();
+      const response = await jobsApi.findAll();
       setJobs(response.data);
       setPage(1);
     } catch (err: any) {
@@ -52,26 +53,20 @@ export function JobsListPage() {
 
   return (
     <PageShell>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
-            Open roles
-          </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
-            Job offers
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Manage postings, skills, and applicants in one place.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/jobs/new")}
-          className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-500 hover:to-indigo-500"
-        >
-          + New job
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Open roles"
+        title="Job offers"
+        description="Manage department postings, skills, and incoming CVs."
+        actions={
+          <button
+            type="button"
+            onClick={() => navigate("/jobs/new")}
+            className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-500 hover:to-indigo-500"
+          >
+            + New job
+          </button>
+        }
+      />
 
       {error && (
         <div className="mb-4 rounded-xl border border-rose-800/60 bg-rose-950/50 p-3 text-rose-200">
@@ -97,7 +92,9 @@ export function JobsListPage() {
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:gap-6">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-semibold text-white">{job.title}</h2>
+                  <h2 className="text-xl font-semibold text-white">
+                    {job.title}
+                  </h2>
                   <p className="mt-2 line-clamp-2 text-sm text-slate-400">
                     {job.description || "No description"}
                   </p>
@@ -117,11 +114,11 @@ export function JobsListPage() {
                     ))}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
+                <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:justify-end">
                   <button
                     type="button"
                     onClick={() => navigate(`/jobs/${job.id}/candidates`)}
-                    className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500"
+                    className="min-w-[7.5rem] rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500"
                   >
                     Candidates
                     {typeof job.candidateCount === "number"
@@ -131,14 +128,14 @@ export function JobsListPage() {
                   <button
                     type="button"
                     onClick={() => navigate(`/jobs/${job.id}/edit`)}
-                    className="rounded-xl border border-slate-600 bg-slate-800/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+                    className="min-w-[7.5rem] rounded-lg border border-slate-600 bg-slate-800/80 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => setJobToDelete(job)}
-                    className="rounded-xl bg-rose-600/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500"
+                    className="min-w-[7.5rem] rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500"
                   >
                     Delete
                   </button>

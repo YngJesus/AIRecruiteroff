@@ -16,8 +16,8 @@ export interface Job {
 }
 
 export const jobsApi = {
-  getAll: () => apiClient.get<Job[]>("/jobs"),
-  getById: (id: string) => apiClient.get<Job>(`/jobs/${id}`),
+  findAll: () => apiClient.get<Job[]>("/jobs"),
+  findOne: (id: string) => apiClient.get<Job>(`/jobs/${id}`),
   create: (data: Omit<Job, "id" | "createdById" | "createdAt" | "updatedAt">) =>
     apiClient.post<Job>("/jobs", data),
   update: (id: string, data: Partial<Job>) =>

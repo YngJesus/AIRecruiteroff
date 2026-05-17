@@ -20,7 +20,11 @@ export class JobsService {
     private candidatesRepository: Repository<Candidate>,
   ) {}
 
-  async create(userId: string, createJobDto: CreateJobDto): Promise<Job> {
+  async create(
+    userId: string,
+    createJobDto: CreateJobDto,
+    departmentId?: string,
+  ): Promise<Job> {
     if (
       !createJobDto.requiredSkills ||
       createJobDto.requiredSkills.length === 0
@@ -31,14 +35,26 @@ export class JobsService {
     const job = this.jobsRepository.create({
       ...createJobDto,
       createdById: userId,
+      departmentId,
     });
     return this.jobsRepository.save(job);
   }
 
-  async findAll(): Promise<Job[]> {
-    const jobs = await this.jobsRepository.find({
-      relations: ['createdBy'],
-    });
+  async findAll(user?: {
+    id: string;
+    role?: string;
+    departmentId?: string;
+  }): Promise<Job[]> {
+    const findOptions: any = { relations: ['createdBy'] };
+    if (user && user.role !== UserRole.ADMIN) {
+      // Recruiters see only their own jobs or jobs in their department
+      findOptions.where = [
+        { createdById: user.id },
+        ...(user.departmentId ? [{ departmentId: user.departmentId }] : []),
+      ];
+    }
+
+    const jobs = await this.jobsRepository.find(findOptions);
 
     const counts = await this.candidatesRepository
       .createQueryBuilder('c')
@@ -57,12 +73,22 @@ export class JobsService {
     })) as any;
   }
 
-  async findOne(id: string): Promise<Job> {
+  async findOne(
+    id: string,
+    user?: { id: string; role?: string; departmentId?: string },
+  ): Promise<Job> {
     const job = await this.jobsRepository.findOne({
       where: { id },
       relations: ['createdBy'],
     });
     if (!job) throw new NotFoundException('Job not found');
+
+    // Department scoping: non-admin users can view jobs from their department or general jobs (no departmentId)
+    if (user && user.role !== UserRole.ADMIN && user.departmentId) {
+      if (job.departmentId && job.departmentId !== user.departmentId) {
+        throw new NotFoundException('Job not found');
+      }
+    }
     return job;
   }
 

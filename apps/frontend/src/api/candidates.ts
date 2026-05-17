@@ -16,6 +16,7 @@ export interface Candidate {
     | "matched"
     | "failed"
     | "awaiting-interview"
+    | "interview-scheduled"
     | "rejected";
   processingError?: string;
   createdAt: string;
@@ -28,9 +29,9 @@ export interface UploadCandidateResponse {
 }
 
 export const candidatesApi = {
-  getAll: (jobId?: string) =>
+  findAll: (jobId?: string) =>
     apiClient.get<Candidate[]>("/candidates", { params: { jobId } }),
-  getById: (id: string) => apiClient.get<Candidate>(`/candidates/${id}`),
+  findOne: (id: string) => apiClient.get<Candidate>(`/candidates/${id}`),
   create: (data: Omit<Candidate, "id" | "createdAt" | "updatedAt">) =>
     apiClient.post<Candidate>("/candidates", data),
   update: (id: string, data: Partial<Candidate>) =>
@@ -38,9 +39,11 @@ export const candidatesApi = {
   updateStatus: (id: string, status: Candidate["status"]) =>
     apiClient.patch<Candidate>(`/candidates/${id}/status`, { status }),
   getStatus: (id: string) =>
-    apiClient.get<{ id: string; status: Candidate["status"]; processingError?: string }>(
-      `/candidates/${id}/status`,
-    ),
+    apiClient.get<{
+      id: string;
+      status: Candidate["status"];
+      processingError?: string;
+    }>(`/candidates/${id}/status`),
   downloadCV: (id: string) =>
     apiClient.get<Blob>(`/candidates/${id}/cv`, { responseType: "blob" }),
   delete: (id: string) => apiClient.delete(`/candidates/${id}`),

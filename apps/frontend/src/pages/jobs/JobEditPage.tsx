@@ -36,7 +36,7 @@ export function JobEditPage() {
       setError("");
       setIsLoading(true);
       try {
-        const response = await jobsApi.getById(jobId);
+        const response = await jobsApi.findOne(jobId);
         const data = response.data;
         setJob(data);
         setTitle(data.title ?? "");

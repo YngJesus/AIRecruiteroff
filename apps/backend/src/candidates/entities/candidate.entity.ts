@@ -16,6 +16,7 @@ export enum CandidateStatus {
   MATCHED = 'matched',
   FAILED = 'failed',
   AWAITING_INTERVIEW = 'awaiting-interview',
+  INTERVIEW_SCHEDULED = 'interview-scheduled',
   REJECTED = 'rejected',
 }
 

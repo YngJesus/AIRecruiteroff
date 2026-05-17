@@ -31,6 +31,7 @@ import { UpdateCandidateDto } from './dto/update-candidate.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { UpdateCandidateStatusDto } from './dto/update-candidate-status.dto';
 import { UploadService } from 'src/upload/upload.service';
@@ -50,6 +51,8 @@ export class CandidatesController {
     @InjectQueue('cv-processing') private readonly cvQueue: Queue,
   ) {}
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN)
   @HttpCode(201)
   @ApiOperation({ summary: 'Create a new candidate' })
   @ApiResponse({ status: 201, description: 'Candidate created' })
@@ -60,23 +63,29 @@ export class CandidatesController {
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN, UserRole.TECH_LEAD)
   @ApiOperation({ summary: 'Get all candidates (filter by jobId optional)' })
   @ApiResponse({ status: 200, description: 'List of candidates' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findAll(@Query('jobId') jobId?: string) {
-    return this.candidatesService.findAll(jobId);
+  findAll(@CurrentUser() user: any, @Query('jobId') jobId?: string) {
+    return this.candidatesService.findAll(user, jobId);
   }
 
   @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN, UserRole.TECH_LEAD)
   @ApiOperation({ summary: 'Get a specific candidate' })
   @ApiResponse({ status: 200, description: 'Candidate details' })
   @ApiResponse({ status: 404, description: 'Candidate not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findOne(@Param('id') id: string) {
-    return this.candidatesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.candidatesService.findOne(id, user);
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update candidate' })
   @ApiResponse({ status: 200, description: 'Candidate updated' })
   @ApiResponse({ status: 404, description: 'Candidate not found' })
@@ -115,6 +124,8 @@ export class CandidatesController {
   }
 
   @Post('upload')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN)
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
@@ -141,6 +152,7 @@ export class CandidatesController {
   async uploadCVAndCreateCandidate(
     @Query('jobId') jobId: string,
     @UploadedFile() file: any,
+    @CurrentUser() user: any,
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -152,12 +164,10 @@ export class CandidatesController {
       throw new BadRequestException('File too large (max 10MB)');
     }
 
-    // Validate job exists
     try {
-      // Assuming you have access to JobsService - add to constructor
-      await this.jobsService.findOne(jobId);
+      await this.jobsService.findOne(jobId, user);
     } catch (err) {
-      throw new BadRequestException('Job not found');
+      throw new BadRequestException('Job not found or not in your department');
     }
 
     // Save file
@@ -184,10 +194,12 @@ export class CandidatesController {
   }
 
   @Get(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN, UserRole.TECH_LEAD)
   @ApiOperation({ summary: 'Get candidate processing status' })
   @ApiResponse({ status: 200, description: 'Current candidate status' })
-  async getStatus(@Param('id') id: string) {
-    const candidate = await this.candidatesService.findOne(id);
+  async getStatus(@Param('id') id: string, @CurrentUser() user: any) {
+    const candidate = await this.candidatesService.findOne(id, user);
     return {
       id: candidate.id,
       status: candidate.status,

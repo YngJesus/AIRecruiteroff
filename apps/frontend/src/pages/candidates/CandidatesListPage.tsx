@@ -32,8 +32,8 @@ export function CandidatesListPage() {
       try {
         if (!opts?.silent) setIsLoading(true);
         const [jobRes, candRes] = await Promise.all([
-          jobsApi.getById(jobId),
-          candidatesApi.getAll(jobId),
+          jobsApi.findOne(jobId),
+          candidatesApi.findAll(jobId),
         ]);
         setJobTitle(jobRes.data.title);
         setCandidates(candRes.data);
@@ -192,8 +192,12 @@ export function CandidatesListPage() {
                 <th className="px-5 py-3 font-semibold text-slate-400">
                   Match
                 </th>
-                <th className="px-5 py-3 font-semibold text-slate-400">Status</th>
-                <th className="px-5 py-3 font-semibold text-slate-400">Actions</th>
+                <th className="px-5 py-3 font-semibold text-slate-400">
+                  Status
+                </th>
+                <th className="px-5 py-3 font-semibold text-slate-400">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80 bg-slate-900/30">

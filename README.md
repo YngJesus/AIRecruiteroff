@@ -50,7 +50,7 @@ Services:
 
 ## Smoke Test Flow
 
-1. Register/login from frontend.
+1. Admin creates initial users (no public registration). See "Admin onboarding" below.
 2. Create a job with required skills.
 3. Open job candidates and upload a CV.
 4. Upload endpoint returns `queued`; worker processes asynchronously.
@@ -63,3 +63,17 @@ Services:
 - If `GROQ_API_KEY` is absent, extraction/matching/questions fall back to deterministic local logic.
 - Uploaded CV files are encrypted at rest using AES-256-GCM and decrypted only for processing/download.
 
+## Admin onboarding
+
+- This workspace disables public registration. An administrator must create users and departments.
+- To create an initial admin user and a default department, run the seed script:
+
+```bash
+cd apps/backend
+npm install
+node -r ts-node/register scripts/seed-admin.ts
+```
+
+Environment variables supported by the seed script: `INIT_ADMIN_EMAIL`, `INIT_ADMIN_PASSWORD`, plus DB connection vars.
+
+After creating the admin, sign in at `/login` and navigate to the Admin -> Users / Departments pages to manage accounts.

@@ -13,16 +13,18 @@ export interface AdminUser {
 }
 
 export const usersApi = {
-  getAll: () => apiClient.get<AdminUser[]>("/users"),
+  findAll: () => apiClient.get<AdminUser[]>("/users"),
   create: (data: {
     email: string;
     password: string;
     firstName: string;
     lastName: string;
     role: UserRole;
+    departmentId?: string;
   }) => apiClient.post<AdminUser>("/users", data),
-  update: (id: string, data: Partial<Pick<AdminUser, "firstName" | "lastName" | "role">>) =>
-    apiClient.patch<AdminUser>(`/users/${id}`, data),
+  update: (
+    id: string,
+    data: Partial<Pick<AdminUser, "firstName" | "lastName" | "role">>,
+  ) => apiClient.patch<AdminUser>(`/users/${id}`, data),
   delete: (id: string) => apiClient.delete<{ ok: true }>(`/users/${id}`),
 };
-

@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
+import { Department } from 'src/departments/entities/department.entity';
 
 export interface RequiredSkill {
   skill: string;
@@ -35,6 +36,13 @@ export class Job {
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'createdById' })
   createdBy: User | null;
+
+  @Column({ nullable: true })
+  departmentId?: string;
+
+  @ManyToOne(() => Department, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'departmentId' })
+  department?: Department | null;
 
   @CreateDateColumn()
   createdAt: Date;

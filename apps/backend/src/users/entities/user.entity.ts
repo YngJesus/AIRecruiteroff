@@ -32,6 +32,9 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.RECRUITER })
   role: UserRole;
 
+  @Column({ nullable: true })
+  departmentId?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

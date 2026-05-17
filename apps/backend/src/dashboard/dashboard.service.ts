@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Job } from 'src/jobs/entities/job.entity';
 import { Candidate } from 'src/candidates/entities/candidate.entity';
 import { DashboardSummary } from './dashboard.types';
@@ -45,16 +45,22 @@ export class DashboardService {
       };
     }
 
-    const candidatesWhere = isAdmin ? undefined : ({ jobId: jobIds } as any);
+    const candidatesWhere = isAdmin
+      ? undefined
+      : jobIds.length > 0
+        ? { jobId: In(jobIds) }
+        : undefined;
 
     const [totalJobs, totalCandidates, candidates, recentCandidates] =
       await Promise.all([
         isAdmin ? this.jobsRepository.count() : jobs.length,
         isAdmin
           ? this.candidatesRepository.count()
-          : this.candidatesRepository.count({
-              where: { jobId: jobIds } as any,
-            }),
+          : jobIds.length > 0
+            ? this.candidatesRepository.count({
+                where: { jobId: In(jobIds) },
+              })
+            : 0,
         this.candidatesRepository.find({
           where: candidatesWhere as any,
           select: { id: true, status: true, matchScore: true } as any,

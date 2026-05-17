@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Candidate, CandidateStatus } from './entities/candidate.entity';
@@ -20,22 +17,49 @@ export class CandidatesService {
     return this.candidatesRepository.save(candidate);
   }
 
-  async findAll(jobId?: string): Promise<Candidate[]> {
-    const query = this.candidatesRepository.createQueryBuilder('candidate');
+  async findAll(
+    user?: { id: string; role?: string; departmentId?: string },
+    jobId?: string,
+  ): Promise<Candidate[]> {
+    const query = this.candidatesRepository
+      .createQueryBuilder('candidate')
+      .leftJoinAndSelect('candidate.job', 'job');
 
     if (jobId) {
-      query.where('candidate.jobId = :jobId', { jobId });
+      query.andWhere('candidate.jobId = :jobId', { jobId });
+    }
+
+    if (user && user.role !== 'admin' && user.departmentId) {
+      // Non-admin users see candidates from jobs in their department or jobs without a department
+      query.andWhere(
+        '(job.departmentId = :depId OR job.departmentId IS NULL)',
+        { depId: user.departmentId },
+      );
     }
 
     return query.orderBy('candidate.matchScore', 'DESC').getMany();
   }
 
-  async findOne(id: string): Promise<Candidate> {
+  async findOne(
+    id: string,
+    user?: { id: string; role?: string; departmentId?: string },
+  ): Promise<Candidate> {
     const candidate = await this.candidatesRepository.findOne({
       where: { id },
       relations: ['job'],
     });
     if (!candidate) throw new NotFoundException('Candidate not found');
+
+    // Department scoping: non-admin users can view candidates from jobs in their department or general jobs
+    if (user && user.role !== 'admin' && user.departmentId) {
+      // Allow if job has no departmentId (general job) OR job matches user's department
+      if (
+        candidate.job?.departmentId &&
+        candidate.job.departmentId !== user.departmentId
+      ) {
+        throw new NotFoundException('Candidate not found');
+      }
+    }
     return candidate;
   }
 
@@ -78,7 +102,10 @@ export class CandidatesService {
     return this.candidatesRepository.save(candidate);
   }
 
-  async updateGeneratedQuestions(id: string, questions: any[]): Promise<Candidate> {
+  async updateGeneratedQuestions(
+    id: string,
+    questions: any[],
+  ): Promise<Candidate> {
     const candidate = await this.findOne(id);
     candidate.generatedQuestions = questions;
     candidate.status = CandidateStatus.MATCHED;

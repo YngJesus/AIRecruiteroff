@@ -8,6 +8,12 @@ import { CandidatesModule } from './candidates/candidates.module';
 import { UploadModule } from './upload/upload.module';
 import { QueueModule } from './queue/queue.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { QuestionsModule } from './questions/questions.module';
+import { AvailabilityModule } from './availability/availability.module';
+import { InterviewsModule } from './interviews/interviews.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -37,6 +43,13 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UploadModule,
     QueueModule,
     DashboardModule,
+    DepartmentsModule,
+    QuestionsModule,
+    AvailabilityModule,
+    InterviewsModule,
+    ReviewsModule,
+    // Notifications module for in-app alerts
+    NotificationsModule,
   ],
 })
 export class AppModule {}

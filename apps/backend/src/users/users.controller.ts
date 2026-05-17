@@ -32,7 +32,7 @@ export class UsersController {
     return safe;
   }
 
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
   @Get()
   async findAll() {
     const users = await this.usersService.findAll();
@@ -61,10 +61,7 @@ export class UsersController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  async adminUpdate(
-    @Param('id') id: string,
-    @Body() dto: AdminUpdateUserDto,
-  ) {
+  async adminUpdate(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
     const user = await this.usersService.adminUpdate(id, dto);
     return this.sanitize(user);
   }

@@ -44,24 +44,28 @@ export class JobsController {
     description: 'Forbidden - only recruiters can create jobs',
   })
   create(@Body() createJobDto: CreateJobDto, @CurrentUser() user: any) {
-    return this.jobsService.create(user.id, createJobDto);
+    return this.jobsService.create(user.id, createJobDto, user.departmentId);
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN, UserRole.TECH_LEAD)
   @ApiOperation({ summary: 'Get all job offers' })
   @ApiResponse({ status: 200, description: 'List of all jobs' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findAll() {
-    return this.jobsService.findAll();
+  findAll(@CurrentUser() user: any) {
+    return this.jobsService.findAll(user);
   }
 
   @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.RECRUITER, UserRole.ADMIN, UserRole.TECH_LEAD)
   @ApiOperation({ summary: 'Get a specific job offer' })
   @ApiResponse({ status: 200, description: 'Job details' })
   @ApiResponse({ status: 404, description: 'Job not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findOne(@Param('id') id: string) {
-    return this.jobsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.jobsService.findOne(id, user);
   }
 
   @Patch(':id')

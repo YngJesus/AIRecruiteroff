@@ -6,9 +6,8 @@ export interface User {
   firstName: string;
   lastName: string;
   role: "admin" | "recruiter" | "tech_lead";
+  departmentId?: string;
 }
-
-type PublicRegisterRole = "recruiter" | "tech_lead";
 
 export interface AuthContextType {
   currentUser: User | null;
@@ -16,13 +15,6 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    role: PublicRegisterRole,
-  ) => Promise<void>;
   logout: () => void;
   hasRole: (
     role:
@@ -80,44 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    role: PublicRegisterRole,
-  ) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName,
-          role,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Registration failed");
-      }
-
-      const data = await response.json();
-      setToken(data.token);
-      setCurrentUser(data.user);
-
-      // Store in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = () => {
     setCurrentUser(null);
     setToken(null);
@@ -145,7 +99,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoading,
     isAuthenticated: !!token,
     login,
-    register,
     logout,
     hasRole,
   };

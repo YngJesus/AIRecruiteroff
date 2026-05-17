@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ui/ProtectedRoute";
 import { LoginPage } from "./pages/auth/LoginPage";
-import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobsListPage } from "./pages/jobs/JobsListPage";
 import { JobCreatePage } from "./pages/jobs/JobCreatePage";
@@ -10,7 +9,11 @@ import { useAuth } from "./context/AuthContext";
 import { CandidateDetailPage } from "./pages/candidates/CandidateDetailPage";
 import { CandidatesListPage } from "./pages/candidates/CandidatesListPage";
 import { Navbar } from "./pages/Navbar";
-import { UsersManagementPage } from "./pages/admin/UsersManagementPage";
+import { AdminDepartmentsPage } from "./pages/admin/AdminDepartmentsPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { TechLeadCalendarPage } from "./pages/techlead/TechLeadCalendarPage";
+import { TechLeadReviewsPage } from "./pages/techlead/TechLeadReviewsPage";
+import { TechLeadInterviewPrepPage } from "./pages/techlead/TechLeadInterviewPrepPage";
 
 export function App() {
   const { isLoading } = useAuth();
@@ -27,7 +30,6 @@ export function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Routes */}
         <Route
@@ -63,17 +65,75 @@ export function App() {
                 />
                 <Route
                   path="/jobs/:jobId/candidates"
-                  element={<CandidatesListPage />}
+                  element={
+                    <ProtectedRoute
+                      requiredRole={["recruiter", "admin", "tech_lead"]}
+                    >
+                      <CandidatesListPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/candidates/:candidateId"
-                  element={<CandidateDetailPage />}
+                  element={
+                    <ProtectedRoute
+                      requiredRole={["recruiter", "admin", "tech_lead"]}
+                    >
+                      <CandidateDetailPage />
+                    </ProtectedRoute>
+                  }
                 />
+                {/* Admin Routes */}
                 <Route
                   path="/admin/users"
                   element={
                     <ProtectedRoute requiredRole="admin">
-                      <UsersManagementPage />
+                      <AdminUsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/departments"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDepartmentsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Tech Lead Routes */}
+                <Route
+                  path="/techlead/questions"
+                  element={<Navigate to="/techlead/reviews" replace />}
+                />
+                <Route
+                  path="/techlead/availability"
+                  element={<Navigate to="/techlead/calendar" replace />}
+                />
+                <Route
+                  path="/techlead/interviews"
+                  element={<Navigate to="/techlead/calendar" replace />}
+                />
+                <Route
+                  path="/techlead/calendar"
+                  element={
+                    <ProtectedRoute requiredRole="tech_lead">
+                      <TechLeadCalendarPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/techlead/reviews"
+                  element={
+                    <ProtectedRoute requiredRole="tech_lead">
+                      <TechLeadReviewsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/techlead/prep"
+                  element={
+                    <ProtectedRoute requiredRole="tech_lead">
+                      <TechLeadInterviewPrepPage />
                     </ProtectedRoute>
                   }
                 />

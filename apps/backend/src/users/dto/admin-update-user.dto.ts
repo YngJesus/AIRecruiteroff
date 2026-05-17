@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { UserRole } from '../entities/user.entity';
 
 export class AdminUpdateUserDto {
@@ -13,5 +13,8 @@ export class AdminUpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
-}
 
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string;
+}
