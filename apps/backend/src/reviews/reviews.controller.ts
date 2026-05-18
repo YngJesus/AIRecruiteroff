@@ -31,11 +31,25 @@ export class ReviewsController {
     return this.reviewsService.createAndNotify(dto, user);
   }
 
-  @Get('techlead/:id/prep')
+  /** Accepted candidates + questions for interview prep (must stay above :id routes). */
+  @Get('prep/:techLeadId')
   @UseGuards(RolesGuard)
   @Roles(UserRole.TECH_LEAD, UserRole.ADMIN)
-  findInterviewPrep(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.reviewsService.findInterviewPrepByTechLead(id, user);
+  findInterviewPrep(
+    @Param('techLeadId') techLeadId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.reviewsService.findInterviewPrepByTechLead(techLeadId, user);
+  }
+
+  @Get('techlead/:techLeadId/prep')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.TECH_LEAD, UserRole.ADMIN)
+  findInterviewPrepLegacy(
+    @Param('techLeadId') techLeadId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.reviewsService.findInterviewPrepByTechLead(techLeadId, user);
   }
 
   @Get('techlead/:id')

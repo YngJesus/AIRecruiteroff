@@ -96,43 +96,72 @@ export class ReviewsService {
       order: { updatedAt: 'DESC' },
     });
 
-    const briefings = await Promise.all(
-      reviews.map(async (r) => {
-        const candidate = await this.candidatesService.findOne(r.candidateId);
-        const interviews = await this.interviewRepo.find({
-          where: { candidateId: r.candidateId, techLeadId },
-          order: { scheduledAt: 'DESC' },
-          take: 1,
-        });
-        const interview = interviews[0] ?? null;
+    const briefings: {
+      reviewId: string;
+      candidateId: string;
+      questions: any[];
+      score: number;
+      notes: string | null;
+      acceptedAt: Date;
+      candidate: {
+        id: string;
+        cvFileName: string;
+        jobId: string;
+        jobTitle?: string;
+        matchScore: number;
+        skillGaps: any;
+        parsedData: any;
+        status: string;
+      };
+      interview: {
+        id: string;
+        scheduledAt: Date;
+        status: string;
+      } | null;
+    }[] = [];
 
-        return {
-          reviewId: r.id,
-          candidateId: r.candidateId,
-          questions: r.questions ?? candidate.generatedQuestions ?? [],
-          score: r.score ?? candidate.matchScore,
-          notes: r.notes,
-          acceptedAt: r.updatedAt,
-          candidate: {
-            id: candidate.id,
-            cvFileName: candidate.cvFileName,
-            jobId: candidate.jobId,
-            jobTitle: candidate.job?.title,
-            matchScore: candidate.matchScore,
-            skillGaps: candidate.skillGaps,
-            parsedData: candidate.parsedData,
-            status: candidate.status,
-          },
-          interview: interview
-            ? {
-                id: interview.id,
-                scheduledAt: interview.scheduledAt,
-                status: interview.status,
-              }
-            : null,
-        };
-      }),
-    );
+    for (const r of reviews) {
+      let candidate;
+      try {
+        // Load without department filter — tech lead already owns this review.
+        candidate = await this.candidatesService.findOne(r.candidateId);
+      } catch {
+        continue;
+      }
+
+      const interviews = await this.interviewRepo.find({
+        where: { candidateId: r.candidateId, techLeadId },
+        order: { scheduledAt: 'DESC' },
+        take: 1,
+      });
+      const interview = interviews[0] ?? null;
+
+      briefings.push({
+        reviewId: r.id,
+        candidateId: r.candidateId,
+        questions: r.questions ?? candidate.generatedQuestions ?? [],
+        score: r.score ?? candidate.matchScore,
+        notes: r.notes,
+        acceptedAt: r.updatedAt,
+        candidate: {
+          id: candidate.id,
+          cvFileName: candidate.cvFileName,
+          jobId: candidate.jobId,
+          jobTitle: candidate.job?.title,
+          matchScore: candidate.matchScore,
+          skillGaps: candidate.skillGaps,
+          parsedData: candidate.parsedData,
+          status: candidate.status,
+        },
+        interview: interview
+          ? {
+              id: interview.id,
+              scheduledAt: interview.scheduledAt,
+              status: interview.status,
+            }
+          : null,
+      });
+    }
 
     return briefings.sort((a, b) => {
       const aHas = Boolean(a.interview?.scheduledAt);

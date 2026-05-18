@@ -66,10 +66,21 @@ export const reviewsApi = {
   }) => apiClient.post<Review>("/reviews", data),
   findByTechLead: (techLeadId: string) =>
     apiClient.get<Review[]>(`/reviews/techlead/${techLeadId}`),
-  findInterviewPrep: (techLeadId: string) =>
-    apiClient.get<InterviewBriefing[]>(
-      `/reviews/techlead/${techLeadId}/prep`,
-    ),
+  findInterviewPrep: async (techLeadId: string) => {
+    try {
+      return await apiClient.get<InterviewBriefing[]>(
+        `/reviews/prep/${techLeadId}`,
+      );
+    } catch (err: any) {
+      const status = err?.statusCode ?? err?.status;
+      if (status === 404) {
+        return apiClient.get<InterviewBriefing[]>(
+          `/reviews/techlead/${techLeadId}/prep`,
+        );
+      }
+      throw err;
+    }
+  },
   updateQuestions: (id: string, questions: ReviewQuestion[]) =>
     apiClient.patch<Review>(`/reviews/${id}/questions`, { questions }),
   accept: (id: string) => apiClient.patch<Review>(`/reviews/${id}/accept`),
