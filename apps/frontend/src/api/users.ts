@@ -8,6 +8,7 @@ export interface AdminUser {
   firstName: string;
   lastName: string;
   role: UserRole;
+  departmentId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,7 +25,9 @@ export const usersApi = {
   }) => apiClient.post<AdminUser>("/users", data),
   update: (
     id: string,
-    data: Partial<Pick<AdminUser, "firstName" | "lastName" | "role">>,
+    data: Partial<
+      Pick<AdminUser, "firstName" | "lastName" | "role" | "departmentId">
+    >,
   ) => apiClient.patch<AdminUser>(`/users/${id}`, data),
   delete: (id: string) => apiClient.delete<{ ok: true }>(`/users/${id}`),
 };

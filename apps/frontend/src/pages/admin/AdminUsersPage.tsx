@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { usersApi, type UserRole } from "../../api/users";
 import { departmentsApi } from "../../api/departments";
-import { PageShell, fieldClass, labelClass } from "../../components/layout/PageShell";
+import {
+  PageShell,
+  fieldClass,
+  labelClass,
+} from "../../components/layout/PageShell";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
@@ -15,6 +19,14 @@ export function AdminUsersPage() {
   const [error, setError] = useState("");
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<any | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState<{
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    departmentId: string;
+  } | null>(null);
   const [formData, setFormData] = useState<{
     email: string;
     password: string;
@@ -67,7 +79,9 @@ export function AdminUsersPage() {
       setShowForm(false);
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to create user");
+      setError(
+        err.response?.data?.message || err.message || "Failed to create user",
+      );
     }
   };
 
@@ -79,9 +93,38 @@ export function AdminUsersPage() {
       setUserToDelete(null);
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to delete");
+      setError(
+        err.response?.data?.message || err.message || "Failed to delete",
+      );
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleEditClick = (user: any) => {
+    setUserToEdit(user);
+    setEditData({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      role: user.role as UserRole,
+      departmentId: user.departmentId || "",
+    });
+    setEditing(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToEdit || !editData) return;
+    setError("");
+    try {
+      await usersApi.update(userToEdit.id, editData);
+      setUserToEdit(null);
+      setEditing(false);
+      await loadData();
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || err.message || "Failed to update user",
+      );
     }
   };
 
@@ -95,7 +138,11 @@ export function AdminUsersPage() {
         title="Users"
         description="Create HR and tech lead accounts and assign them to departments."
         actions={
-          <button type="button" className={btnPrimary} onClick={() => setShowForm(!showForm)}>
+          <button
+            type="button"
+            className={btnPrimary}
+            onClick={() => setShowForm(!showForm)}
+          >
             {showForm ? "Cancel" : "+ Create user"}
           </button>
         }
@@ -118,7 +165,9 @@ export function AdminUsersPage() {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className={fieldClass}
                 required
               />
@@ -128,7 +177,9 @@ export function AdminUsersPage() {
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 className={fieldClass}
                 required
               />
@@ -137,7 +188,9 @@ export function AdminUsersPage() {
               <label className={labelClass}>First name</label>
               <input
                 value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, firstName: e.target.value })
+                }
                 className={fieldClass}
                 required
               />
@@ -146,7 +199,9 @@ export function AdminUsersPage() {
               <label className={labelClass}>Last name</label>
               <input
                 value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, lastName: e.target.value })
+                }
                 className={fieldClass}
                 required
               />
@@ -189,6 +244,85 @@ export function AdminUsersPage() {
         </form>
       )}
 
+      {editing && userToEdit && editData && (
+        <form
+          onSubmit={handleEditSubmit}
+          className="mb-8 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-6 space-y-4"
+        >
+          <h3 className="text-white text-lg">Edit {userToEdit.email}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>First name</label>
+              <input
+                value={editData.firstName}
+                onChange={(e) =>
+                  setEditData({ ...editData, firstName: e.target.value })
+                }
+                className={fieldClass}
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Last name</label>
+              <input
+                value={editData.lastName}
+                onChange={(e) =>
+                  setEditData({ ...editData, lastName: e.target.value })
+                }
+                className={fieldClass}
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Role</label>
+              <select
+                value={editData.role}
+                onChange={(e) =>
+                  setEditData({ ...editData, role: e.target.value as UserRole })
+                }
+                className={fieldClass}
+              >
+                <option value="recruiter">HR (Recruiter)</option>
+                <option value="tech_lead">Tech Lead</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Department</label>
+              <select
+                value={editData.departmentId}
+                onChange={(e) =>
+                  setEditData({ ...editData, departmentId: e.target.value })
+                }
+                className={fieldClass}
+              >
+                <option value="">No department</option>
+                {departments.map((dep) => (
+                  <option key={dep.id} value={dep.id}>
+                    {dep.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button type="submit" className={btnPrimary}>
+              Save
+            </button>
+            <button
+              type="button"
+              className="rounded-xl border px-4 py-2 text-sm"
+              onClick={() => {
+                setUserToEdit(null);
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-16">
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
@@ -221,9 +355,17 @@ export function AdminUsersPage() {
                         : user.role}
                   </td>
                   <td className="px-5 py-4 text-slate-300">
-                    {departments.find((d) => d.id === user.departmentId)?.name || "—"}
+                    {departments.find((d) => d.id === user.departmentId)
+                      ?.name || "—"}
                   </td>
                   <td className="px-5 py-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleEditClick(user)}
+                      className="mr-2 rounded-lg px-3 py-1.5 text-sm font-medium text-sky-400 hover:bg-sky-950/50"
+                    >
+                      Edit
+                    </button>
                     <button
                       type="button"
                       disabled={user.id === currentUser?.id}

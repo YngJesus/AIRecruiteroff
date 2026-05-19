@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { reviewsApi, type Review, type ReviewQuestion } from "../../api/reviews";
+import {
+  reviewsApi,
+  type Review,
+  type ReviewQuestion,
+} from "../../api/reviews";
 import { PageShell, fieldClass } from "../../components/layout/PageShell";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { MatchScoreRing } from "../../components/ui/MatchScoreRing";
@@ -71,7 +75,9 @@ function ReviewCard({
       await reviewsApi.accept(review.id);
       onProcessed();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to accept");
+      setError(
+        err.response?.data?.message || err.message || "Failed to accept",
+      );
     } finally {
       setProcessing(false);
     }
@@ -84,7 +90,9 @@ function ReviewCard({
       await reviewsApi.reject(review.id);
       onProcessed();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to reject");
+      setError(
+        err.response?.data?.message || err.message || "Failed to reject",
+      );
     } finally {
       setProcessing(false);
     }
@@ -102,14 +110,16 @@ function ReviewCard({
             {c?.cvFileName?.replace(/\.[^.]+$/, "") || "Candidate"}
           </h3>
           <p className="text-sm text-slate-400 mt-0.5">
-            {c?.jobTitle || "Job"} Â· sent for your review
+            {c?.jobTitle || "Job"} sent for your review
           </p>
         </div>
         <MatchScoreRing score={displayScore} size="lg" />
         <span className="rounded-full bg-amber-950/80 px-3 py-1 text-xs font-semibold text-amber-200 ring-1 ring-amber-800/50">
           PENDING
         </span>
-        <span className="text-slate-500 text-sm">{expanded ? "â–²" : "â–¼"}</span>
+        <span className="text-slate-500 text-sm">
+          {expanded ? "" : "Click to review"}
+        </span>
       </button>
 
       {expanded && (
@@ -183,7 +193,9 @@ function ReviewCard({
                       {q.skill || "General"}
                     </span>
                     {q.type === "custom" && (
-                      <span className="ml-2 text-xs text-violet-400">custom</span>
+                      <span className="ml-2 text-xs text-violet-400">
+                        custom
+                      </span>
                     )}
                     <p className="text-sm text-slate-200 mt-1">{q.question}</p>
                   </div>
@@ -193,7 +205,7 @@ function ReviewCard({
                     className="shrink-0 text-rose-400 hover:text-rose-300 text-sm px-2"
                     title="Remove question"
                   >
-                    âœ•
+                    Delete
                   </button>
                 </div>
               ))}
@@ -231,7 +243,7 @@ function ReviewCard({
                 to={`/candidates/${c.id}`}
                 className="text-sm text-blue-400 hover:text-blue-300"
               >
-                Full candidate profile â†’
+                Full candidate profile
               </Link>
             )}
             <div className="flex gap-2 ml-auto">
@@ -300,7 +312,7 @@ export function TechLeadReviewsPage() {
         </div>
       ) : reviews.length === 0 ? (
         <EmptyState
-          icon="ðŸ“‹"
+          icon="No reviews"
           title="No pending reviews"
           description="When HR sends candidates from your department, they appear here."
           action={
