@@ -30,14 +30,11 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
-            className="text-left"
+            className="text-left flex items-center"
+            aria-label="recruitini"
           >
-            <span className="text-xl font-bold tracking-tight text-white">
-              AIRecruiter
-            </span>
-            <span className="block text-[10px] font-medium uppercase tracking-widest text-slate-500">
-              {isTechLead ? "Tech lead" : isHr ? "Hiring" : role}
-            </span>
+            <img src="/Logo.png" alt="recruitini" className="h-8 w-auto" />
+            <span className="sr-only">recruitini</span>
           </button>
           <div className="flex flex-wrap items-center gap-1">
             <button
