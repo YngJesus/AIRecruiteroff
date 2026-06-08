@@ -34,7 +34,7 @@ export function LoginPage() {
     <AuthShell>
       <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur-md">
         <p className="text-xs font-semibold uppercase tracking-widest text-blue-400/90">
-          AIRecruiter
+          Recrutini
         </p>
         <h1 className="mt-2 text-2xl font-bold text-white">Welcome back</h1>
         <p className="mt-1 text-sm text-slate-400">Sign in to your account</p>
