@@ -123,14 +123,10 @@ apps/
 - **Graceful degradation**: no API key or LLM failure never blocks the pipeline.
 - **Encrypted at rest**: CVs hold personal data, so files are encrypted and only decrypted for processing or download.
 
-## Roadmap
-
-- [TODO: 2-3 honest next steps, e.g. tests, multi-language CVs, evaluation of extraction accuracy]
 
 ## Author
 
 Baha Eddine Jdidi, [portfolio](https://bahajdidi.vercel.app) · [GitHub](https://github.com/YngJesus) · [LinkedIn](https://linkedin.com/in/bahaeddinejdidi)
 
 ## License
-
-[TODO: add a LICENSE file (MIT is fine) and name it here]
+    MIT
