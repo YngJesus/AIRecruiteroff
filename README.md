@@ -1,154 +1,136 @@
-<!--
-	Professional README for AIRecruiter
-	Rewritten to provide clear project overview, setup, usage, and contribution guidance.
--->
+# Recrutini
 
-# AIRecruiter
+AI-powered recruitment platform. Upload CVs, extract structured candidate data, score fit against job requirements, spot skill gaps, and generate technical interview questions.
 
-> AI-powered recruitment platform that ingests CVs, extracts candidate data, evaluates fit against job requirements, highlights skill gaps, and generates technical interview questions.
+> Built solo with NestJS, React and PostgreSQL. [TODO: live demo link or "demo GIF below"]
 
-## Key features
+![Dashboard](docs/screenshots/dashboard.png) <!-- TODO: add screenshots -->
 
-- Automated CV parsing and data extraction (Groq AI with deterministic fallback)
-- Profile-to-job matching with skill gap identification
-- Automated technical interview question generation
-- Secure encrypted storage for uploaded CVs (AES-256-GCM)
-- Queue-based processing using BullMQ + Redis for scalable background work
+## What it does
 
-## Architecture & Tech Stack
+- **CV ingestion**: PDF upload, encrypted at rest (AES-256-GCM)
+- **Extraction**: Groq LLM (`llama-3.3-70b-versatile`) turns raw CV text into structured JSON. [TODO: confirm JSON mode]
+- **Fallbacks**: deterministic regex parsing when the LLM is unavailable or no API key is set. [TODO: OCR (Tesseract) for scanned PDFs, only keep if it's really in the code]
+- **Matching**: weighted skill scoring of a candidate against a job's required skills. [TODO: explain the weights in one line]
+- **Skill gaps**: lists what the candidate is missing for the job
+- **Interview questions**: LLM-generated technical questions tailored to the gaps
+- **Access control**: JWT auth, roles: [TODO: Admin / HR / Tech Lead, what each can do]. Public registration is disabled; the admin creates accounts.
 
-- Backend: NestJS, TypeORM, PostgreSQL
-- Queue / Workers: BullMQ, Redis
-- AI: Groq (configurable model) with regex/local fallback
-- Frontend: React + Vite
-- API docs: Swagger available at `/api/docs`
+## How it works
 
-## Getting started — prerequisites
+Uploads are never processed in the request. The API stores the file, queues a job, and a worker does the heavy lifting.
 
-- Docker & Docker Compose (recommended) or Node.js 18+ and PostgreSQL + Redis locally
-- (Optional) `pnpm` / `npm` for local development
+```mermaid
+flowchart LR
+    A[Upload CV] --> B[Encrypt + store]
+    B --> C[(BullMQ / Redis)]
+    C --> D[Worker: extract text]
+    D --> E{LLM available?}
+    E -- yes --> F[Groq JSON extraction]
+    E -- no --> G[Regex fallback]
+    F --> H[Match + skill gaps]
+    G --> H
+    H --> I[Generate interview questions]
+    I --> J[Candidate: matched]
+```
+
+Candidate status flow: `uploaded → processing → matched` (or `failed`).
+
+[TODO: if there's real agent/tool-calling, add a section here describing the loop and the tools. If it's a fixed sequence, leave it out.]
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Backend | NestJS, TypeORM, PostgreSQL |
+| Queue | BullMQ, Redis |
+| AI | Groq API (configurable model) |
+| Frontend | React, Vite |
+| Infra | Docker, Docker Compose |
+| Docs | Swagger at `/api/docs` |
 
 ## Quickstart (Docker)
 
-1. Copy the example environment file and update secrets:
-
 ```bash
-cp .env.example .env
-# Edit .env to set DB, Redis and API keys
-```
-
-2. Start all services:
-
-```bash
+cp .env.example .env     # set secrets
 docker compose up --build
 ```
 
-Services once running:
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:3000 |
+| Swagger | http://localhost:3000/api/docs |
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
-- Swagger: http://localhost:3000/api/docs
-- pgAdmin (if enabled): http://localhost:8080
-
-## Environment variables
-
-Create a `.env` file in the repository root with required values. Example variables used by the project:
-
-```env
-PORT=3000
-CORS_ORIGIN=http://localhost:5173
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=airecruiter
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-JWT_SECRET=replace_me
-
-GROQ_API_KEY=replace_me # optional, AI extraction; when absent uses local logic
-GROQ_MODEL=llama-3.3-70b-versatile
-
-CV_ENCRYPTION_KEY=replace_me_with_a_long_random_secret
-```
-
-Notes:
-
-- If `GROQ_API_KEY` is not provided, Groq-based features fall back to deterministic local logic.
-- Uploaded CV files are encrypted at rest using AES-256-GCM and decrypted only for processing or download.
-
-## Admin onboarding (initial setup)
-
-This workspace disables public registration. An administrator must create initial accounts.
-
-To create the first admin user and a default department:
+Create the first admin:
 
 ```bash
 cd apps/backend
 npm install
-node -r ts-node/register scripts/seed-admin.ts
+INIT_ADMIN_EMAIL=admin@example.com INIT_ADMIN_PASSWORD=change_me \
+  node -r ts-node/register scripts/seed-admin.ts
 ```
 
-Set `INIT_ADMIN_EMAIL` and `INIT_ADMIN_PASSWORD` as environment variables when running the script (along with DB connection vars).
+Then sign in at `/login` and create departments, users and jobs from the Admin UI.
 
-After the admin account is created, sign in at `/login` and use the Admin UI to manage users and departments.
+## Environment variables
 
-## Typical developer flow (local)
+| Variable | Purpose |
+|---|---|
+| `PORT`, `CORS_ORIGIN` | API port and allowed frontend origin |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | PostgreSQL |
+| `REDIS_HOST`, `REDIS_PORT` | Redis for BullMQ |
+| `JWT_SECRET` | JWT signing |
+| `CV_ENCRYPTION_KEY` | AES-256-GCM key for uploaded CVs |
+| `GROQ_API_KEY` | Optional. Without it, extraction falls back to local logic |
+| `GROQ_MODEL` | Defaults to `llama-3.3-70b-versatile` |
 
-1. Start PostgreSQL and Redis (via Docker or locally).
-2. Copy `.env` and configure connections.
-3. Start backend in watch mode (from `apps/backend`):
+## Local development
 
 ```bash
-npm install
-npm run start:dev
+# backend
+cd apps/backend && npm install && npm run start:dev
+
+# frontend
+cd apps/frontend && npm install && npm run dev
 ```
 
-4. Start frontend (from `apps/frontend`):
+Needs PostgreSQL and Redis running (Docker is easiest).
 
-```bash
-npm install
-npm run dev
+## Project structure
+
+```
+apps/
+  backend/
+    src/ai/           LLM integration + fallbacks
+    src/queue/        BullMQ setup
+    src/candidates/   processors, matching logic
+    scripts/          seed-admin.ts
+  frontend/           React + Vite UI
 ```
 
-5. Upload a CV through the UI to exercise the processing pipeline. Background workers process uploads and update candidate status.
+## Smoke test
 
-## Smoke test checklist
+1. Seed the admin and sign in
+2. Create a job with required skills
+3. Upload a CV on the job's candidates screen
+4. Watch the status go `uploaded → processing → matched`
+5. Check parsed data, match score, skill gaps and generated questions
 
-1. Create an admin user (seed script).
-2. Create a job with required skills in the Admin UI.
-3. Navigate to the job candidates screen and upload a CV.
-4. Confirm the upload response is `queued` and a worker processes the file.
-5. Verify candidate transitions: `uploaded` → `processing` → `matched` (or `failed`).
-6. Inspect parsed candidate data, match score, skill gaps, and generated questions.
+## Design decisions
 
-## Development notes
+- **Queue over inline processing**: LLM and OCR calls are slow and can fail, so they run in workers with retries.
+- **Graceful degradation**: no API key or LLM failure never blocks the pipeline.
+- **Encrypted at rest**: CVs hold personal data, so files are encrypted and only decrypted for processing or download.
 
-- Background processing and CV parsing are implemented as asynchronous workers; check `apps/backend/src/queue` and `apps/backend/src/candidates` for processors.
-- AI-related logic lives under `apps/backend/src/ai` and supports a Groq API integration with model selection via `GROQ_MODEL`.
-- Uploaded files are encrypted under `apps/backend/uploads` — encryption/decryption keys come from `CV_ENCRYPTION_KEY`.
+## Roadmap
 
-## Contributing
+- [TODO: 2-3 honest next steps, e.g. tests, multi-language CVs, evaluation of extraction accuracy]
 
-Contributions are welcome. Suggested process:
+## Author
 
-1. Open an issue describing the change or bug.
-2. Branch from `master` and create a clear PR with tests where applicable.
-3. Keep changes scoped; follow existing code style.
+Baha Eddine Jdidi, [portfolio](https://bahajdidi.vercel.app) · [GitHub](https://github.com/YngJesus) · [LinkedIn](https://linkedin.com/in/bahaeddinejdidi)
 
-## License & Contact
+## License
 
-Specify your project license here (e.g., MIT) and provide contact or maintainers information.
-
----
-
-If you'd like, I can also:
-
-- Add a `.env.example` file to the repo with all variables listed.
-- Add badges (build/test/coverage) and a CONTRIBUTING.md.
-- Split the README into `docs/` pages for more detailed developer guides.
-
-To view the updated file, see [README.md](README.md).
+[TODO: add a LICENSE file (MIT is fine) and name it here]
