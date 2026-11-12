@@ -2,19 +2,19 @@
 
 AI-powered recruitment platform. Upload CVs, extract structured candidate data, score fit against job requirements, spot skill gaps, and generate technical interview questions.
 
-> Built solo with NestJS, React and PostgreSQL. [TODO: live demo link or "demo GIF below"]
+> Built solo with NestJS, React and PostgreSQL. 
 
-![Dashboard](docs/screenshots/dashboard.png) <!-- TODO: add screenshots -->
+![Dashboard](docs/screenshots/dashboard.png)
 
 ## What it does
 
 - **CV ingestion**: PDF upload, encrypted at rest (AES-256-GCM)
-- **Extraction**: Groq LLM (`llama-3.3-70b-versatile`) turns raw CV text into structured JSON. [TODO: confirm JSON mode]
-- **Fallbacks**: deterministic regex parsing when the LLM is unavailable or no API key is set. [TODO: OCR (Tesseract) for scanned PDFs, only keep if it's really in the code]
-- **Matching**: weighted skill scoring of a candidate against a job's required skills. [TODO: explain the weights in one line]
+- **Extraction**: Groq LLM (`llama-3.3-70b-versatile`) turns raw CV text into structured JSON.
+- **Fallbacks**: deterministic regex parsing when the LLM is unavailable or no API key is set.
+- **Matching**: weighted skill scoring of a candidate against a job's required skills. 
 - **Skill gaps**: lists what the candidate is missing for the job
 - **Interview questions**: LLM-generated technical questions tailored to the gaps
-- **Access control**: JWT auth, roles: [TODO: Admin / HR / Tech Lead, what each can do]. Public registration is disabled; the admin creates accounts.
+- **Access control**: JWT auth, roles:HR / Tech Lead. Public registration is disabled; the admin creates accounts.
 
 ## How it works
 
@@ -36,7 +36,6 @@ flowchart LR
 
 Candidate status flow: `uploaded → processing → matched` (or `failed`).
 
-[TODO: if there's real agent/tool-calling, add a section here describing the loop and the tools. If it's a fixed sequence, leave it out.]
 
 ## Tech stack
 
